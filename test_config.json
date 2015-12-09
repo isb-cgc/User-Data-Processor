@@ -1,0 +1,41 @@
+{
+    "FILES" : [
+        {
+            "COLUMNS" : [
+                {
+                    "NAME"  : "ParticipantBarcode",
+                    "TYPE"  : "STRING",
+                    "INDEX" : 1
+                },
+                {
+                    "NAME"  : "Study",
+                    "TYPE"  : "INTEGER",
+                    "INDEX" : 3
+                },
+                {
+                    "NAME"  : "gender",
+                    "TYPE"  : "STRING",
+                    "INDEX" : 2
+                }
+
+            ],
+            "FILENAME" : "isb-cgc-dev/phyliss/CCLE_subjects.tsv",
+            "PLATFORM" : "platform",
+            "DATATYPE" : "user_gen",
+            "BIGQUERY_TABLE_NAME" : "phyliss_test"
+        }
+    ],
+    "USER_METADATA_TABLES": {
+        "METADATA_DATA" : "user_metadata_1_1",
+        "METADATA_SAMPLES" : "user_metadata_samples_1_1",
+        "FEATURE_DEFS": "user_feature_defs_1_1"
+    },
+    "USER_PROJECT" : "1",
+    "BUCKET" : "isb-cgc-dev",
+    "GOOGLE_PROJECT" : "isb-cgc",
+    "BIGQUERY_DATASET" : "test",
+    "COMPLETE_URL" : "the url to the api that the processing service must called when processing is complete",
+    "ACCEPTED_URL" : "the url to the api that the processing service must called when processing has successfully started",
+    "WARNING_URL" : "the url to the api that the processing service must called when processing has warnings",
+    "ERROR_URL" : "the url to the api that the processing service must called when processing has an error and cannot complete"
+}

@@ -1,0 +1,89 @@
+def get_gexp_schema():
+    return [
+        {'column_name': 'ParticipantBarcode',
+         'type': 'STRING'},
+        {'column_name': 'SampleBarcode',
+         'type': 'STRING'},
+        {'column_name': 'AliquotBarcode',
+         'type': 'STRING'},
+        {'column_name': 'Study',
+         'type': 'STRING'},
+        {'column_name': 'SampleTypeLetterCode',
+         'type': 'STRING'},
+        {'column_name': 'Platform',
+         'type': 'STRING'},
+        {'column_name': 'Pipeline',
+         'type': 'STRING'},
+        {'column_name': 'Gene_Name',
+         'type': 'STRING'},
+        {'column_name': 'Count',
+         'type': 'FLOAT'}
+    ]
+
+def get_protein_schema():
+    return [
+        {'column_name': 'ParticipantBarcode',
+         'type': 'STRING'},
+        {'column_name': 'SampleBarcode',
+         'type': 'STRING'},
+        {'column_name': 'AliquotBarcode',
+         'type': 'STRING'},
+        {'column_name': 'Study',
+         'type': 'STRING'},
+        {'column_name': 'SampleTypeLetterCode',
+         'type': 'STRING'},
+        {'column_name': 'Platform',
+         'type': 'STRING'},
+        {'column_name': 'Pipeline',
+         'type': 'STRING'},
+        {'column_name': 'Gene_Name',
+         'type': 'STRING'},
+        {'column_name': 'Protein_Name',
+         'type': 'STRING'},
+        {'column_name': 'Protein_Expression',
+         'type': 'FLOAT'}
+    ]
+
+def get_mirna_schema():
+    return [
+        {'column_name': 'ParticipantBarcode',
+         'type': 'STRING'},
+        {'column_name': 'SampleBarcode',
+         'type': 'STRING'},
+        {'column_name': 'AliquotBarcode',
+         'type': 'STRING'},
+        {'column_name': 'Study',
+         'type': 'STRING'},
+        {'column_name': 'SampleTypeLetterCode',
+         'type': 'STRING'},
+        {'column_name': 'Platform',
+         'type': 'STRING'},
+        {'column_name': 'Pipeline',
+         'type': 'STRING'},
+        {'column_name': 'miRNA_ID',
+         'type': 'STRING'},
+        {'column_name': 'read_per_million',
+         'type': 'FLOAT'},
+        {'column_name': 'read_count',
+         'type': 'INTEGER'}
+    ]
+
+def get_meth_schema():
+    return [
+        {'column_name': 'ParticipantBarcode',
+         'type': 'STRING'},
+        {'column_name': 'SampleBarcode',
+         'type': 'STRING'},
+        {'column_name': 'AliquotBarcode',
+         'type': 'STRING'},
+        {'column_name': 'Study',
+         'type': 'STRING'},
+        {'column_name': 'SampleTypeLetterCode',
+         'type': 'STRING'},
+        {'column_name': 'Platform',
+         'type': 'STRING'},
+        {'column_name': 'Probe_ID',
+         'type': 'STRING'},
+        {'column_name': 'Beta_Value',
+         'type': 'FLOAT'}
+    ]

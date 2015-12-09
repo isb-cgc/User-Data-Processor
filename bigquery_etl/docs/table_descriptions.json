@@ -1,0 +1,6 @@
+{
+        'Clinical' : 'This table contains a curated subset of the information available in "clinical" XML files at the TCGA DCC.  All tumor types and all samples available as of October 2015 are included.\n\nIf you have questions or comments, please email info@isb-cgc.org',
+
+        'Biospecimen' : 'This table contains a curated subset of the information available in "biospecimen" XML files at the TCGA DCC.  All tumor types and all samples available as of October 2015 are included. \n\nIf you have questions or comments, please email info@isb-cgc.org'
+}
+
