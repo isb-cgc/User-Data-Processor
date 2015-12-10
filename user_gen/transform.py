@@ -27,7 +27,7 @@ import numpy as np
 from bigquery_etl.tests import tests
 import re
 
-def parse_file(project_id, bucket_name, filename, outfilename, metadata, dataset_name, table_name):
+def parse_file(project_id, bucket_name, filename, outfilename, metadata):
 
     # connect to the cloud bucket
     gcs = GcsConnector(project_id, bucket_name)
@@ -43,13 +43,14 @@ def parse_file(project_id, bucket_name, filename, outfilename, metadata, dataset
     # data_df = gcutils.convert_blob_to_dataframe(gcs, project_id, bucket_name, filename, skiprows=1)
     # data_df = additional_changes(data_df)
     # data_df = add_metadata(data_df, metadata)
-    destination = '{0}.{1}'.format(dataset_name, table_name)
-    data_df.to_gbq(destination, project_id, if_exists='append')
+    # print data_df
+
+
     # TODO: Determine if file *is* metadata
 
     # upload the contents of the dataframe in njson format
-    # status = gcs.convert_df_to_njson_and_upload(data_df, outfilename, metadata=metadata)
-    # return status
+    status = gcs.convert_df_to_njson_and_upload(data_df, outfilename, metadata=metadata)
+    return status
 
 def add_metadata(data_df, metadata):
     """Add metadata info to the dataframe

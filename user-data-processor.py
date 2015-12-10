@@ -111,8 +111,6 @@ def main(user_data_config, etl_config_file):
                                                         blob_name,
                                                         outputfilename,
                                                         metadata,
-                                                        bq_dataset,
-                                                        table_name
                                                         )
 
 
@@ -125,24 +123,20 @@ def main(user_data_config, etl_config_file):
             is_schema_file = True
             schema = schemas_dir + config['methylation']['schema_file']
 
-        # load_data_from_file.run(
-        #     project_id,
-        #     bq_dataset,
-        #     table_name,
-        #     schema,
-        #     source_path,
-        #     source_format='NEWLINE_DELIMITED_JSON',
-        #     write_disposition='WRITE_APPEND',
-        #     is_schema_file=False)
-
-
-
-
+        load_data_from_file.run(
+            project_id,
+            bq_dataset,
+            table_name,
+            schema,
+            source_path,
+            source_format='NEWLINE_DELIMITED_JSON',
+            write_disposition='WRITE_APPEND',
+            is_schema_file=False)
 
         # Delete temporary files
-        # print 'Deleting temporary file {0}'.format(outputfilename)
-        # gcs = GcsConnector(project_id, bucket_name)
-        # gcs.delete_blob(outputfilename)
+        print 'Deleting temporary file {0}'.format(outputfilename)
+        gcs = GcsConnector(project_id, bucket_name)
+        gcs.delete_blob(outputfilename)
 
 
 if __name__ == '__main__':

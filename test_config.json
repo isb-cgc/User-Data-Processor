@@ -9,7 +9,7 @@
                 },
                 {
                     "NAME"  : "Study",
-                    "TYPE"  : "INTEGER",
+                    "TYPE"  : "STRING",
                     "INDEX" : 3
                 },
                 {
@@ -31,6 +31,7 @@
         "FEATURE_DEFS": "user_feature_defs_1_1"
     },
     "USER_PROJECT" : "1",
+    "STUDY" : "1",
     "BUCKET" : "isb-cgc-dev",
     "GOOGLE_PROJECT" : "isb-cgc",
     "BIGQUERY_DATASET" : "test",
