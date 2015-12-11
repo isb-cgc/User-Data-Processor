@@ -41,6 +41,8 @@ def parse_file(project_id, bucket_name, filename, outfilename, metadata, cloudsq
         if 'MAP_TO' in column:
             column_map[column['NAME']] = column_map[column['MAP_TO']]
 
+    # TODO: go through each file and merge into one large table.
+
     # Iterate over samples, generating metadata_data and inserting to metadata_samples?
 
     # Update BigQuery Table
