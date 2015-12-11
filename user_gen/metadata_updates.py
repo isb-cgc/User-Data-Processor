@@ -51,6 +51,7 @@ def check_update_metadata_samples(table, columns):
 
 '''
 Function to append data to a given metadata_data table.
+Takes in one row only.
 '''
 def update_metadata_data(table, metadata):
     metadata_schema = user_metadata()
@@ -69,6 +70,33 @@ def update_metadata_data(table, metadata):
     db = cloudsql_connector()
     cursor = db.cursor(MySQLdb.cursors.DictCursor)
     cursor.execute(insert_stmt)
+    db.commit()
+    cursor.close()
+    db.close()
+
+'''
+Function to append data to a given metadata_data table.
+Takes in a list of metadata objects
+'''
+def update_metadata_data_list(table, metadata):
+    metadata_schema = user_metadata()
+    column_titles = [d['column_name'] for d in metadata_schema]
+    insert_stmt = 'INSERT INTO {0} ({1}) VALUES ({2});'.format(table, ','.join(column_titles), ','.join(['%s' for i in range(0,len(column_titles))]))
+    value_list = []
+
+    # Generate a tuple for each row in the metadata. Only collect data from columns in the table
+    for row in metadata:
+        value_tuple = ()
+        for idx, title in enumerate(column_titles):
+            if idx == 0:
+                value_tuple += ((row[title]),)
+            else:
+                value_tuple += ((row[title]),)
+        value_list.append(value_tuple)
+
+    db = cloudsql_connector()
+    cursor = db.cursor(MySQLdb.cursors.DictCursor)
+    cursor.executemany(insert_stmt, value_list)
     db.commit()
     cursor.close()
     db.close()

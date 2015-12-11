@@ -153,7 +153,7 @@ class GcsConnector(object):
     # set the object metadata
     #----------------------------------------
     @retry(retry_on_result=retry_if_result_none, wait_exponential_multiplier=2000, wait_exponential_max=10000, stop_max_delay=60000, stop_max_attempt_number=3)
-    def convert_df_to_njson_and_upload(self, df, destination_blobname, metadata={}):
+    def convert_df_to_njson_and_upload(self, df, destination_blobname, metadata={}, tmp_bucket='isb-cgc-dev'):
 
         log.info("Converting dataframe into a new-line delimited JSON file")
 
@@ -163,7 +163,9 @@ class GcsConnector(object):
             file_to_upload.write(rec.convert_objects(convert_numeric=False).to_json() + "\n")
         file_to_upload.seek(0)
 
-        upload_blob = storage.blob.Blob(destination_blobname, bucket=self.bucket)
+        bucket = self.client.get_bucket(tmp_bucket)
+        upload_blob = storage.blob.Blob(destination_blobname, bucket=bucket)
+
         upload_blob.upload_from_string(file_to_upload.getvalue())
         # set blob metadata
         if metadata:
