@@ -6,13 +6,13 @@
                     "NAME"  : "Name",
                     "TYPE"  : "STRING",
                     "INDEX" : 1,
-                    "MAP_TO" : "Long_Gene_Name"
+                    "MAP_TO" : "Symbol"
                 },
                 {
                     "NAME"  : "Description",
                     "TYPE"  : "STRING",
                     "INDEX" : 2,
-                    "MAP_TO" : "Gene_Name"
+                    "MAP_TO" : "ID"
                 }
             ],
             "FILENAME" : "isb-cgc-dev/phyliss/GTEx_subset_GExpMatrix_modded.tsv",

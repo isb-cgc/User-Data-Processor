@@ -1,24 +1,22 @@
-def get_gexp_schema():
+def get_molecular_schema():
     return [
-        {'name': 'ParticipantBarcode',
-         'type': 'STRING'},
         {'name': 'SampleBarcode',
          'type': 'STRING'},
-        {'name': 'AliquotBarcode',
-         'type': 'STRING'},
+        {'name': 'Project',
+         'type': 'INTEGER'},
         {'name': 'Study',
          'type': 'INTEGER'},
-        {'name': 'SampleTypeLetterCode',
-         'type': 'STRING'},
         {'name': 'Platform',
          'type': 'STRING'},
         {'name': 'Pipeline',
          'type': 'STRING'},
-        {'name': 'Gene_Name',
+        {'name': 'Symbol',
          'type': 'STRING'},
-        {'name': 'Long_Gene_Name',
+        {'name': 'ID',
          'type': 'STRING'},
-        {'name': 'Count',
+        {'name': 'Tab',
+         'type': 'STRING'},
+        {'name': 'Level',
          'type': 'FLOAT'}
     ]
 

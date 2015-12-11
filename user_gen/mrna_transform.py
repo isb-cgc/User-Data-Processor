@@ -51,18 +51,19 @@ def parse_file(project_id, bucket_name, filename, outfilename, metadata, cloudsq
         else:
             for k, m in j.iteritems():
                 new_df_obj = {}
-                new_df_obj['ParticipantBarcode'] = ''
+
                 new_df_obj['SampleBarcode'] = i
-                new_df_obj['AliquotBarcode'] = ''
+                new_df_obj['Project'] = metadata['Project']
                 new_df_obj['Study'] = metadata['Study']
-                new_df_obj['SampleTypeLetterCode'] = ''
                 new_df_obj['Platform'] = metadata['Platform']
                 new_df_obj['Pipeline'] = metadata['Pipeline']
 
-                # Datatype specific fields
-                new_df_obj['Gene_Name'] = map_values['Gene_Name'][k]
-                new_df_obj['Long_Gene_Name'] = map_values['Long_Gene_Name'][k]
-                new_df_obj['Count'] = m
+                # Optional values
+                new_df_obj['Symbol'] = map_values['Symbol'][k] if 'Symbol' in map_values.keys() else ''
+                new_df_obj['ID'] = map_values['ID'][k] if 'ID' in map_values.keys() else ''
+                new_df_obj['TAB'] = map_values['TAB'][k] if 'TAB' in map_values.keys() else ''
+
+                new_df_obj['Level'] = m
                 new_df_data.append(new_df_obj)
     new_df = pd.DataFrame(new_df_data)
 
