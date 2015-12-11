@@ -42,6 +42,25 @@ def generate_bq_schema(columns):
         obj.append({'name': column['NAME'], 'type': column['TYPE']})
     return obj
 
+def get_column_mapping(datatype):
+    column_map = {
+        'mrna': {
+            'Name': 'ID',
+            'Description': 'Symbol'
+        },
+        'mirna': {
+            'miRNA_name': 'Symbol',
+            'miRNA_ID': 'ID'
+        },
+        'meth': {
+            'Probe_ID': 'ID',
+        }
+    }
+    if datatype in column_map:
+        return column_map[datatype]
+    else:
+        return {}
+
 def main(user_data_config, etl_config_file):
     schemas_dir = os.path.join(os.getcwd(), 'schemas/')
 
@@ -88,33 +107,30 @@ def main(user_data_config, etl_config_file):
         metadata['DataType'] = file['DATATYPE']
         # update_metadata_data(cloudsql_metadata_data, metadata)
 
-
-        # If user_gen, Load data into CloudSQL samples table
-        if file['DATATYPE'] == 'user_gen':
+        # Get basic column information depending on datatype
+        if file['DATATYPE'] != 'user_gen':
             # TODO: Update table and append new columns of data
-
-            pass
+            column_map = get_column_mapping(file['DATATYPE'])
+        else:
+            column_map = generate_bq_schema(file['COLUMNS'])
 
 
         # TODO: Update user feature_defs
 
-
+        # Transform and load metadata
         status = transform_functions[file['DATATYPE']]( project_id,
                                                         bucket_name,
                                                         blob_name,
                                                         outputfilename,
                                                         metadata,
                                                         cloudsql_tables,
-                                                        file['COLUMNS'],
+                                                        column_map,
+                                                        columns=file['COLUMNS'] if 'COLUMNS' in file else [],
                                                         )
-        # Transform and load into BigQuery
-
+        # Load into BigQuery
         # source_path = 'gs://' + bucket_name + '/' + outputfilename
-        # # if file['DATATYPE'] == 'user_gen':
-        # is_schema_file = False
-        # # schema = generate_bq_schema(file['COLUMNS'])
         # if file['DATATYPE'] != 'user_gen':
-        #     schema = get_gexp_schema()
+        #     schema = get_molecular_schema()
         # else:
         #     schema = generate_bq_schema(file['COLUMNS'])
         #
@@ -126,7 +142,7 @@ def main(user_data_config, etl_config_file):
         #     source_path,
         #     source_format='NEWLINE_DELIMITED_JSON',
         #     write_disposition='WRITE_APPEND',
-        #     is_schema_file=is_schema_file)
+        #     is_schema_file=False)
         #
         # # Delete temporary files
         # print 'Deleting temporary file {0}'.format(outputfilename)

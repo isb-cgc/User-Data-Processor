@@ -1,22 +1,9 @@
 {
     "FILES" : [
         {
-            "COLUMNS" : [
-                {
-                    "NAME"  : "Name",
-                    "TYPE"  : "STRING",
-                    "INDEX" : 1,
-                    "MAP_TO" : "Symbol"
-                },
-                {
-                    "NAME"  : "Description",
-                    "TYPE"  : "STRING",
-                    "INDEX" : 2,
-                    "MAP_TO" : "ID"
-                }
-            ],
             "FILENAME" : "isb-cgc-dev/phyliss/GTEx_subset_GExpMatrix_modded.tsv",
             "PLATFORM" : "platform",
+            "PIPELINE" : "pipeline",
             "DATATYPE" : "mrna",
             "BIGQUERY_TABLE_NAME" : "phyliss_test"
         }

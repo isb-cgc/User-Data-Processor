@@ -15,21 +15,13 @@
 
 """Script to parse Protein files
 """
-from bigquery_etl.utils import gcutils
 from bigquery_etl.extract.gcloud_wrapper import GcsConnector
-from bigquery_etl.utils.logging_manager import configure_logging
 from bigquery_etl.extract.utils import convert_file_to_dataframe
-from bigquery_etl.transform.tools import cleanup_dataframe
-from bigquery_etl.transform.tools import split_df_column_values_into_multiple_rows
 import sys
-import pandas as pd
-from bigquery_table_schemas import get_gexp_schema
-import numpy as np
-from bigquery_etl.tests import tests
-import re
+from bigquery_table_schemas import get_user_gen_schema
+from metadata_updates import update_metadata_data_list
 
-
-def parse_file(project_id, bucket_name, filename, outfilename, metadata, columns):
+def parse_file(project_id, bucket_name, filename, outfilename, metadata, cloudsql_tables, bq_schema, columns):
 
     # connect to the cloud bucket
     gcs = GcsConnector(project_id, bucket_name)
@@ -40,39 +32,31 @@ def parse_file(project_id, bucket_name, filename, outfilename, metadata, columns
     # convert blob into dataframe
     data_df = convert_file_to_dataframe(filebuffer, skiprows=0, header=0)
 
-    # clean-up dataframe
-    data_df = cleanup_dataframe(data_df)
-    new_df_data = []
+    file_columns = data_df.columns.values
+    print file_columns
+    column_map = {}
+    # Get column mappings
+    for column in columns:
+        # If the column maps to something add it to the dictionary
+        if 'MAP_TO' in column:
+            column_map[column['NAME']] = column_map[column['MAP_TO']]
 
-    column_map = get_column_mapping(columns)
-    map_values = {}
+    # Iterate over samples, generating metadata_data and inserting to metadata_samples?
 
-    # Column headers are sample ids
-    for i, j in data_df.iteritems():
-        if i in column_map.keys():
-            map_values[column_map[i]] = [k for d, k in j.iteritems()]
+    # Update BigQuery Table
 
-        else:
-            for k, m in j.iteritems():
-                new_df_obj = {}
-                new_df_obj['ParticipantBarcode'] = ''
-                new_df_obj['SampleBarcode'] = i
-                new_df_obj['AliquotBarcode'] = ''
-                new_df_obj['Study'] = metadata['Study']
-                new_df_obj['SampleTypeLetterCode'] = ''
-                new_df_obj['Platform'] = metadata['Platform']
-                new_df_obj['Pipeline'] = metadata['Pipeline']
+    # Get unique barcodes and update metadata_data table
+    # sample_barcodes = list(set([k for d, k in data_df['SampleBarcode'].iteritems()]))
+    # sample_metadata_list = []
+    # for barcode in sample_barcodes:
+    #     metadata['SampleBarcode'] = barcode
+    #     sample_metadata_list.append(metadata)
+    # update_metadata_data_list(cloudsql_tables['METADATA_DATA'], sample_metadata_list)
 
-                # Datatype specific fields
-                new_df_obj['Gene_Name'] = map_values['Gene_Name'][k]
-                new_df_obj['Long_Gene_Name'] = map_values['Long_Gene_Name'][k]
-                new_df_obj['Count'] = m
-                new_df_data.append(new_df_obj)
-    new_df = pd.DataFrame(new_df_data)
 
-    # # upload the contents of the dataframe in njson format
-    status = gcs.convert_df_to_njson_and_upload(new_df, outfilename, metadata=metadata, tmp_bucket='isb-cgc-dev')
-    return status
+    # # # upload the contents of the dataframe in njson format
+    # status = gcs.convert_df_to_njson_and_upload(data_df, outfilename, metadata=metadata, tmp_bucket='isb-cgc-dev')
+    # return status
 
 
 def get_column_mapping(columns):

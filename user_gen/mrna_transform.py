@@ -22,10 +22,8 @@ from bigquery_etl.transform.tools import cleanup_dataframe
 import sys
 import pandas as pd
 from metadata_updates import update_metadata_data_list
-from utils.sql_connector import cloudsql_connector
-from cloudsql_table_schemas import user_metadata, user_feature_def, user_metadata_sample
 
-def parse_file(project_id, bucket_name, filename, outfilename, metadata, cloudsql_tables, columns):
+def parse_file(project_id, bucket_name, filename, outfilename, metadata, cloudsql_tables, column_map, columns):
 
     # connect to the cloud bucket
     gcs = GcsConnector(project_id, bucket_name)
@@ -40,7 +38,6 @@ def parse_file(project_id, bucket_name, filename, outfilename, metadata, cloudsq
     data_df = cleanup_dataframe(data_df)
     new_df_data = []
 
-    column_map = get_column_mapping(columns)
     map_values = {}
 
     # Column headers are sample ids
@@ -80,11 +77,7 @@ def parse_file(project_id, bucket_name, filename, outfilename, metadata, cloudsq
     return status
 
 
-def get_column_mapping(columns):
-    column_map = {}
-    for column in columns:
-        column_map[column['NAME']] = column['MAP_TO']
-    return column_map
+
 
 
 def add_metadata(data_df, metadata):
