@@ -16,24 +16,13 @@
 import json
 import os
 
-import user_gen.mrna_transform
-import user_gen.user_gen_transform
+import user_gen.molecular_processing
+import user_gen.user_gen_processing
 from user_gen.bigquery_table_schemas import *
-from user_gen.metadata_updates import *
-# from bigquery_etl.execution import process_manager
-# from bigquery_etl.tests import tests
 from bigquery_etl.extract.gcloud_wrapper import GcsConnector
 import argparse
 from bigquery_etl.load import load_data_from_file
 
-# extract functions
-
-
-# transform functions
-transform_functions = {
-    'mrna': user_gen.mrna_transform.parse_file,
-    'user_gen': user_gen.user_gen_transform.parse_file
-}
 
 def generate_bq_schema(columns):
     obj = []
@@ -77,11 +66,29 @@ def main(user_data_config, etl_config_file):
         'METADATA_SAMPLES': data['USER_METADATA_TABLES']['METADATA_SAMPLES'],
         'FEATURE_DEFS': data['USER_METADATA_TABLES']['FEATURE_DEFS']
     }
-    #--------------------------------------------
-    # Execution
-    #------------------------------------------------------
-    # pmr = process_manager.ProcessManager(max_workers=max_workers, db=db_filename, table=table_task_queue_status)
+
+    # Check for user_gen files and process them first
+    user_gen_list = []
+    mol_file_list = []
     for file in data['FILES']:
+        if file['DATATYPE'] == 'user_gen':
+            user_gen_list.append(file)
+        else:
+            mol_file_list.append(file)
+    print len(user_gen_list)
+    print len(mol_file_list)
+    # Process all user_gen files together
+    user_gen.user_gen_processing.process_user_gen_files(project_id,
+                                                        user_project,
+                                                        user_study,
+                                                        bucketname,
+                                                        bq_dataset,
+                                                        cloudsql_tables,
+                                                        user_gen_list)
+
+    # print data['FILES']
+    # Process all other datatype files
+    for file in mol_file_list:
         table_name = file['BIGQUERY_TABLE_NAME']
 
         inputfilename = file['FILENAME']
@@ -108,46 +115,39 @@ def main(user_data_config, etl_config_file):
         # update_metadata_data(cloudsql_metadata_data, metadata)
 
         # Get basic column information depending on datatype
-        if file['DATATYPE'] != 'user_gen':
-            # TODO: Update table and append new columns of data
-            column_map = get_column_mapping(file['DATATYPE'])
-        else:
-            column_map = generate_bq_schema(file['COLUMNS'])
+        column_map = generate_bq_schema(file['COLUMNS'])
 
 
         # TODO: Update user feature_defs
 
         # Transform and load metadata
-        status = transform_functions[file['DATATYPE']]( project_id,
-                                                        bucket_name,
-                                                        blob_name,
-                                                        outputfilename,
-                                                        metadata,
-                                                        cloudsql_tables,
-                                                        column_map,
-                                                        columns=file['COLUMNS'] if 'COLUMNS' in file else [],
-                                                        )
+        status = user_gen.molecular_processing.parse_file(project_id,
+                                                          bucket_name,
+                                                          blob_name,
+                                                          outputfilename,
+                                                          metadata,
+                                                          cloudsql_tables,
+                                                          column_map,
+                                                          columns=file['COLUMNS'] if 'COLUMNS' in file else []
+                                                          )
         # Load into BigQuery
-        # source_path = 'gs://' + bucket_name + '/' + outputfilename
-        # if file['DATATYPE'] != 'user_gen':
-        #     schema = get_molecular_schema()
-        # else:
-        #     schema = generate_bq_schema(file['COLUMNS'])
-        #
-        # load_data_from_file.run(
-        #     project_id,
-        #     bq_dataset,
-        #     table_name,
-        #     schema,
-        #     source_path,
-        #     source_format='NEWLINE_DELIMITED_JSON',
-        #     write_disposition='WRITE_APPEND',
-        #     is_schema_file=False)
-        #
-        # # Delete temporary files
-        # print 'Deleting temporary file {0}'.format(outputfilename)
-        # gcs = GcsConnector(project_id, 'isb-cgc-dev')
-        # gcs.delete_blob(outputfilename)
+        source_path = 'gs://' + bucket_name + '/' + outputfilename
+        schema = generate_bq_schema(file['COLUMNS'])
+
+        load_data_from_file.run(
+            project_id,
+            bq_dataset,
+            table_name,
+            schema,
+            source_path,
+            source_format='NEWLINE_DELIMITED_JSON',
+            write_disposition='WRITE_APPEND',
+            is_schema_file=False)
+
+        # Delete temporary files
+        print 'Deleting temporary file {0}'.format(outputfilename)
+        gcs = GcsConnector(project_id, 'isb-cgc-dev')
+        gcs.delete_blob(outputfilename)
 
 
 if __name__ == '__main__':
