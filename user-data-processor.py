@@ -55,8 +55,9 @@ def main(user_data_config, etl_config_file):
             user_gen_list.append(file)
         else:
             mol_file_list.append(file)
-    print len(user_gen_list)
-    print len(mol_file_list)
+
+    print 'Number of user_gen files: ', len(user_gen_list)
+    print 'Number of molecular files:', len(mol_file_list)
 
     # Process all user_gen files together
     if len(user_gen_list):
