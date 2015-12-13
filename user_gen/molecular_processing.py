@@ -26,7 +26,7 @@ from metadata_updates import update_metadata_data_list, update_molecular_metadat
 from bigquery_table_schemas import get_molecular_schema
 
 
-def parse_file(project_id, bq_dataset, bucket_name, file_data, filename, outfilename, metadata, cloudsql_tables, columns):
+def parse_file(project_id, bq_dataset, bucket_name, file_data, filename, outfilename, metadata, cloudsql_tables):
 
     # connect to the cloud bucket
     gcs = GcsConnector(project_id, bucket_name)

@@ -104,8 +104,7 @@ def main(user_data_config, etl_config_file):
                                                      blob_name,
                                                      outputfilename,
                                                      metadata,
-                                                     cloudsql_tables,
-                                                     columns=file['COLUMNS'] if 'COLUMNS' in file else []
+                                                     cloudsql_tables
                                                      )
 
 
