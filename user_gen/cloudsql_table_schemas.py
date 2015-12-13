@@ -27,12 +27,20 @@ def user_metadata_sample():
         {'column_name': 'ParticipantBarcode',
          'type': 'VARCHAR(200)'},
         {'column_name': 'SampleBarcode',
-         'type': 'VARCHAR(200)'}
+         'type': 'VARCHAR(200)'},
+        {'column_name': 'has_mrna',
+         'type': 'BOOLEAN'},
+        {'column_name': 'has_mirna',
+         'type': 'BOOLEAN'},
+        {'column_name': 'has_protein',
+         'type': 'BOOLEAN'},
+        {'column_name': 'has_meth',
+         'type': 'BOOLEAN'}
     ]
 
 def user_feature_def():
     return [
-        {'column_name': 'User',
+        {'column_name': 'Study',
          'type': 'INTEGER'},
         {'column_name': 'FeatureName',
          'type': 'VARCHAR(200)'},

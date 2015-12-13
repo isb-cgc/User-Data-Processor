@@ -22,8 +22,7 @@ from bigquery_etl.transform.tools import cleanup_dataframe
 from bigquery_etl.load import load_data_from_file
 import sys
 import pandas as pd
-from metadata_updates import update_metadata_data_list
-from utils.sql_connector import cloudsql_connector
+from metadata_updates import update_metadata_data_list, insert_metadata_samples, insert_feature_defs_list
 
 
 def process_user_gen_files(project_id, user_project_id, study_id, bucket_name, bq_dataset, cloudsql_tables, files):
@@ -82,12 +81,15 @@ def process_user_gen_files(project_id, user_project_id, study_id, bucket_name, b
             data_df = pd.merge(data_df, new_df, on='SampleBarcode', how='outer')
 
     # For complete dataframe, create metadata_samples rows
-    db = cloudsql_connector()
-    data_df.to_sql(cloudsql_tables['METADATA_SAMPLES'], con=db, flavor='mysql', if_exists='replace')
+    print 'Inserting into data into {0}.'.format(cloudsql_tables['METADATA_SAMPLES'])
+    data_df = cleanup_dataframe(data_df)
+    data_df['has_mrna'] = 0
+    data_df['has_mirna'] = 0
+    data_df['has_protein'] = 0
+    data_df['has_meth'] = 0
+    insert_metadata_samples(data_df, cloudsql_tables['METADATA_SAMPLES'])
 
-    # Update metadata_samples and feature_defs
-
-    # Update and create bq table
+    # Update and create bq table file
     temp_outfile = cloudsql_tables['METADATA_SAMPLES'] + '.out'
     gcs.convert_df_to_njson_and_upload(data_df, temp_outfile, tmp_bucket='isb-cgc-dev')
 
@@ -105,6 +107,12 @@ def process_user_gen_files(project_id, user_project_id, study_id, bucket_name, b
         source_format='NEWLINE_DELIMITED_JSON',
         write_disposition='WRITE_APPEND',
         is_schema_file=False)
+
+    # Generate feature_defs
+    feature_defs = generate_feature_defs(study_id, project_id, bq_dataset, table_name, schema)
+
+    # Update feature_defs table
+    insert_feature_defs_list(cloudsql_tables['FEATURE_DEFS'], feature_defs)
 
     # Delete temporary files
     print 'Deleting temporary file {0}'.format(temp_outfile)
@@ -128,11 +136,9 @@ def insert_metadata(data_df, metadata, table):
         sample_metadata_list.append(metadata)
     update_metadata_data_list(table, sample_metadata_list)
 
-
 def generate_bq_schema(columns):
     obj = []
     seen_columns = []
-    print columns
     for column in columns:
         # If the column has a mapping, use that as its name
         if 'MAP_TO' in column.keys():
@@ -142,6 +148,24 @@ def generate_bq_schema(columns):
             obj.append({'name': column['NAME'], 'type': column['TYPE']})
     return obj
 
+
+'''
+Function to generate a feature def for each feature in the dataframe except SampleBarcode
+FeatureName: column name from metadata_samples
+BqMapId: bq_project:bq_dataset:bq_table:column_name
+'''
+def generate_feature_defs(study_id, bq_project, bq_dataset, bq_table, schema):
+    feature_defs = []
+    for column in schema:
+        if column['name'] != 'SampleBarcode':
+            feature_name = column['name']
+            bq_map = ':'.join([bq_project, bq_dataset, bq_table, column['name']])
+            if column['type'] == 'STRING':
+                datatype = 'C'
+            else:
+                datatype = 'N'
+            feature_defs.append((study_id, feature_name, bq_map, datatype))
+    return feature_defs
 
 if __name__ == '__main__':
     project_id = sys.argv[1]

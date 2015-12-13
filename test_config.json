@@ -5,7 +5,7 @@
             "PLATFORM" : "platform",
             "PIPELINE" : "pipeline",
             "DATATYPE" : "mrna",
-            "BIGQUERY_TABLE_NAME" : "phyliss_test"
+            "BIGQUERY_TABLE_NAME" : "cgc_mrna_1_1"
         }
     ],
     "USER_METADATA_TABLES": {

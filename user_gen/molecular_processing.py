@@ -18,12 +18,15 @@
 
 from bigquery_etl.extract.gcloud_wrapper import GcsConnector
 from bigquery_etl.extract.utils import convert_file_to_dataframe
+from bigquery_etl.load import load_data_from_file
 from bigquery_etl.transform.tools import cleanup_dataframe
 import sys
 import pandas as pd
-from metadata_updates import update_metadata_data_list
+from metadata_updates import update_metadata_data_list, update_molecular_metadata_samples_list, insert_feature_defs_list
+from bigquery_table_schemas import get_molecular_schema
 
-def parse_file(project_id, bucket_name, filename, outfilename, metadata, cloudsql_tables, column_map, columns):
+
+def parse_file(project_id, bq_dataset, bucket_name, file_data, filename, outfilename, metadata, cloudsql_tables, columns):
 
     # connect to the cloud bucket
     gcs = GcsConnector(project_id, bucket_name)
@@ -39,6 +42,9 @@ def parse_file(project_id, bucket_name, filename, outfilename, metadata, cloudsq
     new_df_data = []
 
     map_values = {}
+
+    # Get basic column information depending on datatype
+    column_map = get_column_mapping(metadata['DataType'])
 
     # Column headers are sample ids
     for i, j in data_df.iteritems():
@@ -72,28 +78,101 @@ def parse_file(project_id, bucket_name, filename, outfilename, metadata, cloudsq
         sample_metadata_list.append(metadata)
     update_metadata_data_list(cloudsql_tables['METADATA_DATA'], sample_metadata_list)
 
-    # TODO: Update feature_defs and metadata_samples table
+    # Update metadata_samples table
+    update_molecular_metadata_samples_list(cloudsql_tables['METADATA_SAMPLES'], metadata['DataType'], sample_barcodes)
 
-    # # upload the contents of the dataframe in njson format
-    status = gcs.convert_df_to_njson_and_upload(new_df, outfilename, metadata=metadata, tmp_bucket='isb-cgc-dev')
-    return status
+    # Generate feature names and bq_mappings
+    table_name = file_data['BIGQUERY_TABLE_NAME']
+    feature_defs = generate_feature_Defs(metadata['DataType'], metadata['Study'], project_id, bq_dataset, table_name, new_df)
 
+    # Update feature_defs table
+    insert_feature_defs_list(cloudsql_tables['FEATURE_DEFS'], feature_defs)
 
+    # upload the contents of the dataframe in njson format
+    gcs.convert_df_to_njson_and_upload(new_df, outfilename, metadata=metadata, tmp_bucket='isb-cgc-dev')
 
+    # Load into BigQuery
+    source_path = 'gs://' + bucket_name + '/' + outfilename
+    schema = get_molecular_schema()
 
+    load_data_from_file.run(
+        project_id,
+        bq_dataset,
+        table_name,
+        schema,
+        source_path,
+        source_format='NEWLINE_DELIMITED_JSON',
+        write_disposition='WRITE_APPEND',
+        is_schema_file=False)
 
-def add_metadata(data_df, metadata):
-    """Add metadata info to the dataframe
-    """
-    data_df['AliquotBarcode'] = metadata['AliquotBarcode']
-    data_df['SampleBarcode'] = metadata['SampleBarcode']
-    data_df['ParticipantBarcode'] = metadata['ParticipantBarcode']
-    data_df['Study'] = metadata['Study'].upper()
-    data_df['SampleTypeLetterCode'] = metadata['SampleTypeLetterCode']
-    data_df['Platform'] = metadata['Platform']
-    data_df['Pipeline'] = metadata['Pipeline']
-    data_df['Center'] = metadata['DataCenterName']
-    return data_df
+    # Delete temporary files
+    print 'Deleting temporary file {0}'.format(outfilename)
+    gcs = GcsConnector(project_id, 'isb-cgc-dev')
+    gcs.delete_blob(outfilename)
+
+def get_column_mapping(datatype):
+    column_map = {
+        'mrna': {
+            'Name': 'ID',
+            'Description': 'Symbol'
+        },
+        'mirna': {
+            'miRNA_name': 'Symbol',
+            'miRNA_ID': 'ID'
+        },
+        'protein': {
+            'Protein_Name': 'Tab',
+            'Gene_Name': 'Symbol',
+            'Gene_Id': 'ID',
+            'Expression': 'Level'
+        },
+        'meth': {
+            'Probe_ID': 'ID',
+        }
+    }
+    if datatype in column_map:
+        return column_map[datatype]
+    else:
+        return {}
+
+'''
+Function to generate a list of feature def for that datatype
+FeatureName will look like this: [Datatype] [Symbol (if available)]
+BqMapId will look like this: bq_project:bq_dataset:bq_table:datatype:symbol(if available):Level
+'''
+def generate_feature_Defs(datatype, study_id, bq_project, bq_dataset, bq_table, data_df):
+    datatype_name_mapping = {
+        'mrna': {
+            'FeatureName': 'Gene Expression',
+            'BqMapId': 'GEXP'
+        },
+        'mirna': {
+            'FeatureName': 'MicroRNA Expression',
+            'BqMapId': 'MIRN'
+        },
+        'protein': {
+            'FeatureName': 'Protein Expression',
+            'BqMapId': 'RPPA'
+        },
+        'meth': {
+            'FeatureName': 'Methylation',
+            'BqMapId': 'METH'
+        }
+    }
+
+    unique_symbols = list(pd.unique(data_df.Symbol.ravel()))
+    feature_defs = []
+    if len(unique_symbols):
+        for symbol in unique_symbols:
+            feature_name = '{0} {1}'.format(datatype_name_mapping[datatype]['FeatureName'], symbol)
+            bqmap = ':'.join([bq_project, bq_dataset, bq_table, datatype_name_mapping[datatype]['BqMapId'], symbol, 'Level'])
+            feature_defs.append((study_id, feature_name, bqmap, 'N'))
+    else:
+        feature_name = datatype_name_mapping[datatype]['FeatureName']
+        bqmap = ':'.join([bq_project, bq_dataset, bq_table, datatype_name_mapping[datatype]['BqMapId'], 'Level'])
+        feature_defs.append((study_id, feature_name, bqmap, 'N'))
+
+    return feature_defs
 
 if __name__ == '__main__':
     project_id = sys.argv[1]

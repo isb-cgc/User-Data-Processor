@@ -1,4 +1,5 @@
 import MySQLdb
+import pandas as pd
 from cloudsql_table_schemas import user_metadata, user_feature_def, user_metadata_sample
 from utils.sql_connector import cloudsql_connector
 
@@ -97,6 +98,70 @@ def update_metadata_data_list(table, metadata):
     db = cloudsql_connector()
     cursor = db.cursor(MySQLdb.cursors.DictCursor)
     cursor.executemany(insert_stmt, value_list)
+    db.commit()
+    cursor.close()
+    db.close()
+
+'''
+Function to insert all metadata_samples data at once from user_gen datatype
+'''
+def insert_metadata_samples(data_df, table):
+    columns = data_df.columns.values
+    data_df = data_df.where((pd.notnull(data_df)), None)
+    insert_stmt = 'INSERT INTO {0} ({1}) VALUES({2})'.format(table,
+                                                             ','.join(columns),
+                                                             ','.join(['%s' for i in range(0, len(columns))]))
+    print insert_stmt
+    value_list = []
+    for i, j in data_df.transpose().iteritems():
+        row = data_df[i:i+1]
+        value_list.append(tuple(row.values[0]))
+
+    db = cloudsql_connector()
+    cursor = db.cursor(MySQLdb.cursors.DictCursor)
+    cursor.executemany(insert_stmt, value_list)
+    db.commit()
+    cursor.close()
+    db.close()
+
+'''
+Function to update rows in metadata_samples with has_datatype information.
+Create new row if doesn't exist.
+'''
+def update_molecular_metadata_samples_list(table, datatype, sample_barcodes):
+    insert_stmt = 'INSERT INTO {0} (SampleBarcode, has_{1}) VALUES (%s, %s) ON DUPLICATE KEY UPDATE has_{2}=1;'.format(table, datatype, datatype)
+    value_list = []
+    for barcode in sample_barcodes:
+        value_list.append((barcode, 1))
+    print insert_stmt
+    print value_list
+    db = cloudsql_connector()
+    cursor = db.cursor(MySQLdb.cursors.DictCursor)
+    cursor.executemany(insert_stmt, value_list)
+    db.commit()
+    cursor.close()
+    db.close()
+
+'''
+Function to insert one new feature definition
+'''
+def insert_feature_defs(sql_table, study_id, name, bq_mapping, type):
+    insert_stmt = 'INSERT INTO {0} (Study, FeatureName, BqMapId, Type) VALUES (%s,%s,%s,%s);'
+    db = cloudsql_connector()
+    cursor = db.cursor(MySQLdb.cursors.DictCursor)
+    cursor.executemany(insert_stmt, (study_id, name, bq_mapping, type))
+    db.commit()
+    cursor.close()
+    db.close()
+
+'''
+Function to insert list of new feature definitions
+'''
+def insert_feature_defs_list(sql_table, data_list):
+    insert_stmt = 'INSERT INTO {0} (Study, FeatureName, BqMapId, Type) VALUES (%s,%s,%s,%s);'.format(sql_table)
+    db = cloudsql_connector()
+    cursor = db.cursor(MySQLdb.cursors.DictCursor)
+    cursor.executemany(insert_stmt, data_list)
     db.commit()
     cursor.close()
     db.close()
