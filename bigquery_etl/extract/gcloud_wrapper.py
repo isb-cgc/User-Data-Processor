@@ -40,7 +40,8 @@ class GcsConnector(object):
         # connect to the cloud bucket
         credentials = GoogleCredentials.get_application_default()
         self.client = storage.Client(project, credentials=credentials)
-        print self.client.list_buckets()
+        for bucket in self.client.list_buckets():
+            print bucket
         self.bucket = self.client.get_bucket(bucket_name)
         self.tempdir = tempdir
 
