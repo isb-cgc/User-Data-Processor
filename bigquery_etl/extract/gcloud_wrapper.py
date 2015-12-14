@@ -29,6 +29,7 @@ import tempfile
 import chardet
 import traceback
 from retrying import retry
+from oauth2client.client import GoogleCredentials
 
 log = logging.getLogger(__name__)
 
@@ -37,7 +38,8 @@ class GcsConnector(object):
     """
     def __init__(self, project, bucket_name, tempdir='/tmp'):
         # connect to the cloud bucket
-        self.client = storage.Client(project)
+        credentials = GoogleCredentials.get_application_default()
+        self.client = storage.Client(project, credentials=credentials)
         self.bucket = self.client.get_bucket(bucket_name)
         self.tempdir = tempdir
 
