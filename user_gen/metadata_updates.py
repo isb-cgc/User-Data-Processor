@@ -134,7 +134,6 @@ def update_molecular_metadata_samples_list(table, datatype, sample_barcodes):
     for barcode in sample_barcodes:
         value_list.append((barcode, 1))
     print insert_stmt
-    print value_list
     db = cloudsql_connector()
     cursor = db.cursor(MySQLdb.cursors.DictCursor)
     cursor.executemany(insert_stmt, value_list)
@@ -159,6 +158,7 @@ Function to insert list of new feature definitions
 '''
 def insert_feature_defs_list(sql_table, data_list):
     insert_stmt = 'INSERT INTO {0} (Study, FeatureName, BqMapId, Type) VALUES (%s,%s,%s,%s);'.format(sql_table)
+    print insert_stmt
     db = cloudsql_connector()
     cursor = db.cursor(MySQLdb.cursors.DictCursor)
     cursor.executemany(insert_stmt, data_list)

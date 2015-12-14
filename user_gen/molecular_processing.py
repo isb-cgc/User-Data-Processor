@@ -92,7 +92,8 @@ def parse_file(project_id, bq_dataset, bucket_name, file_data, filename, outfile
     gcs.convert_df_to_njson_and_upload(new_df, outfilename, metadata=metadata, tmp_bucket='isb-cgc-dev')
 
     # Load into BigQuery
-    source_path = 'gs://' + bucket_name + '/' + outfilename
+    # Using temporary file location (in case we don't have write permissions on user's bucket?)
+    source_path = 'gs://isb-cgc-dev/' + outfilename
     schema = get_molecular_schema()
 
     load_data_from_file.run(
