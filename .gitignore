@@ -9,5 +9,6 @@ __pycache__/
 .env
 *.env
 
-*.json
+client_secrets.json
+privatekey.json
 .DS_STORE

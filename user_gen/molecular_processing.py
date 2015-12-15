@@ -28,6 +28,8 @@ from bigquery_table_schemas import get_molecular_schema
 
 def parse_file(project_id, bq_dataset, bucket_name, file_data, filename, outfilename, metadata, cloudsql_tables):
 
+    print 'Begin processing {0}.'.format(filename)
+
     # connect to the cloud bucket
     gcs = GcsConnector(project_id, bucket_name)
 

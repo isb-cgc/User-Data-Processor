@@ -1,0 +1,33 @@
+{
+    "FILES" : [
+        {
+            "FILENAME" : "test-user-data-upload/GTEx_subset_GExpMatrix.tsv",
+            "PLATFORM" : "platform",
+            "PIPELINE" : "pipeline",
+            "DATATYPE" : "mrna",
+            "BIGQUERY_TABLE_NAME" : "cgc_mrna_1_1"
+        },
+        {
+            "COLUMNS" : [
+                "NAME" : "SAMPLE_ID",
+                "TYPE" : "STRING",
+                "INDEX" : 1,
+                "MAP_TO" : "SampleBarcode"
+            ],
+            "FILENAME" : "test-bucket/SampleList.txt",
+            "PLATFORM" : "Platform",
+            "PIPELINE" : "Pipeline",
+            "DATATYPE" : "user_gen"
+        }
+    ],
+    "USER_METADATA_TABLES": {
+        "METADATA_DATA" : "user_metadata_1_1",
+        "METADATA_SAMPLES" : "user_metadata_samples_1_1",
+        "FEATURE_DEFS": "user_feature_defs_1_1"
+    },
+    "USER_PROJECT" : 1,
+    "STUDY" : 1,
+    "BUCKET" : "test-user-data-upload",
+    "GOOGLE_PROJECT" : "isb-cgc-test",
+    "BIGQUERY_DATASET" : "test"
+}
