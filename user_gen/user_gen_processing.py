@@ -27,6 +27,8 @@ from metadata_updates import update_metadata_data_list, insert_metadata_samples,
 
 def process_user_gen_files(project_id, user_project_id, study_id, bucket_name, bq_dataset, cloudsql_tables, files):
 
+    print 'Begin processing user_gen files.'
+
     # connect to the cloud bucket
     gcs = GcsConnector(project_id, bucket_name)
     data_df = pd.DataFrame()
