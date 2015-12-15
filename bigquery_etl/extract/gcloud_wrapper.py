@@ -39,6 +39,7 @@ class GcsConnector(object):
     """
     def __init__(self, project, bucket_name, tempdir='/tmp'):
         # connect to the cloud bucket
+        os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = '/var/jenkins/workspace/user-data-processor/privatekey.json'
         filepath = os.environ['GOOGLE_APPLICATION_CREDENTIALS']
         print filepath, os.access(filepath, os.R_OK)
         self.client = storage.Client(project)
