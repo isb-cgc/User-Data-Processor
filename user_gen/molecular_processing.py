@@ -58,10 +58,10 @@ def parse_file(project_id, bq_dataset, bucket_name, file_data, filename, outfile
                 new_df_obj = {}
 
                 new_df_obj['SampleBarcode'] = i
-                new_df_obj['Project'] = metadata['Project']
-                new_df_obj['Study'] = metadata['Study']
-                new_df_obj['Platform'] = metadata['Platform']
-                new_df_obj['Pipeline'] = metadata['Pipeline']
+                new_df_obj['Project'] = metadata['project_id']
+                new_df_obj['Study'] = metadata['study_id']
+                new_df_obj['Platform'] = metadata['platform']
+                new_df_obj['Pipeline'] = metadata['pipeline']
 
                 # Optional values
                 new_df_obj['Symbol'] = map_values['Symbol'][k] if 'Symbol' in map_values.keys() else ''
