@@ -23,6 +23,11 @@ from bigquery_etl.load import load_data_from_file
 import sys
 import pandas as pd
 from metadata_updates import update_metadata_data_list, insert_metadata_samples, insert_feature_defs_list
+import os
+from os.path import join, dirname
+from utils import dotenv
+
+dotenv.read_dotenv(join(dirname(__file__), '../.env'))
 
 
 def process_user_gen_files(project_id, user_project_id, study_id, bucket_name, bq_dataset, cloudsql_tables, files):
@@ -88,10 +93,11 @@ def process_user_gen_files(project_id, user_project_id, study_id, bucket_name, b
 
     # Update and create bq table file
     temp_outfile = cloudsql_tables['METADATA_SAMPLES'] + '.out'
-    gcs.convert_df_to_njson_and_upload(data_df, temp_outfile, tmp_bucket='isb-cgc-dev')
+    tmp_bucket = os.environ.get('tmp_bucket_location')
+    gcs.convert_df_to_njson_and_upload(data_df, temp_outfile, tmp_bucket=tmp_bucket)
 
     # Using temporary file location (in case we don't have write permissions on user's bucket?
-    source_path = 'gs://isb-cgc-dev/' + temp_outfile
+    source_path = 'gs://' + tmp_bucket + '/' + temp_outfile
 
     schema = generate_bq_schema(all_columns)
     table_name = 'cgc_user_{0}_{1}'.format(user_project_id, study_id)
@@ -113,7 +119,7 @@ def process_user_gen_files(project_id, user_project_id, study_id, bucket_name, b
 
     # Delete temporary files
     print 'Deleting temporary file {0}'.format(temp_outfile)
-    gcs = GcsConnector(project_id, 'isb-cgc-dev')
+    gcs = GcsConnector(project_id, tmp_bucket)
     gcs.delete_blob(temp_outfile)
 
 
