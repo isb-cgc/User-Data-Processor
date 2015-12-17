@@ -63,3 +63,11 @@ Study|INTEGER|User's Study ID this value is associated with. This refers to the 
 
 These are the only columns that are required in this schema. All other columns are generated when the data is provided and customized for the data processed.
 
+###Additional Environment Variables for Jenkins
+Name|Description
+----|-----------
+GAE_CLIENT_EMAIL|Client email from privatekey.json
+GAE_CLIENT_ID|Client ID from privatekey.json
+GAE_PRIVATE_KEY|Private key from privatekey.json
+GAE_PRIVATE_KEY_ID|Private key ID from privatekey.json
+GCLOUD_BUCKET|Place to download .env and ssl files from
