@@ -80,8 +80,9 @@ def parse_file(project_id, bq_dataset, bucket_name, file_data, filename, outfile
     sample_barcodes = list(set([k for d, k in new_df['SampleBarcode'].iteritems()]))
     sample_metadata_list = []
     for barcode in sample_barcodes:
-        metadata['SampleBarcode'] = barcode
-        sample_metadata_list.append(metadata)
+        new_metadata = metadata.copy()
+        new_metadata['SampleBarcode'] = barcode
+        sample_metadata_list.append(new_metadata)
     update_metadata_data_list(cloudsql_tables['METADATA_DATA'], sample_metadata_list)
 
     # Update metadata_samples table

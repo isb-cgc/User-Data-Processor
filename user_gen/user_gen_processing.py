@@ -137,8 +137,9 @@ def insert_metadata(data_df, metadata, table):
     sample_barcodes = list(set([k for d, k in data_df['sample_barcode'].iteritems()]))
     sample_metadata_list = []
     for barcode in sample_barcodes:
-        metadata['sample_barcode'] = barcode
-        sample_metadata_list.append(metadata)
+        new_metadata = metadata.copy()
+        new_metadata['sample_barcode'] = barcode
+        sample_metadata_list.append(new_metadata)
     update_metadata_data_list(table, sample_metadata_list)
 
 def generate_bq_schema(columns):
