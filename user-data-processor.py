@@ -50,14 +50,20 @@ def main(user_data_config, etl_config_file):
     # Check for user_gen files and process them first
     user_gen_list = []
     mol_file_list = []
+    low_level_list = []
     for file in data['FILES']:
         if file['DATATYPE'] == 'user_gen':
             user_gen_list.append(file)
+        elif file['DATATYPE'] == 'low_level':
+            low_level_list.append(file)
         else:
             mol_file_list.append(file)
 
+    # TODO: Add processor for low level file listings
+
     print 'Number of user_gen files: ', len(user_gen_list)
-    print 'Number of molecular files:', len(mol_file_list)
+    print 'Number of molecular files: ', len(mol_file_list)
+    print 'Number of low level files: ', len(low_level_list)
 
     # Process all user_gen files together
     if len(user_gen_list):
@@ -104,6 +110,10 @@ def main(user_data_config, etl_config_file):
                                                      cloudsql_tables
                                                      )
 
+    if len(low_level_list):
+        for file in low_level_list:
+            pass
+        pass
 
 
 if __name__ == '__main__':

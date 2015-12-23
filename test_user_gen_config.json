@@ -1,0 +1,87 @@
+{
+    "FILES" : [
+        {
+            "COLUMNS" : [
+                {
+                    "NAME"  : "SAMPID",
+                    "TYPE"  : "STRING",
+                    "INDEX" : 1,
+                    "MAP_TO" : "SampleBarcode"
+                },
+                {
+                    "NAME"  : "SMTS",
+                    "TYPE"  : "STRING",
+                    "INDEX" : 2
+                },
+                {
+                    "NAME"  : "SMTSD",
+                    "TYPE"  : "STRING",
+                    "INDEX" : 3
+                },
+                {
+                    "NAME"  : "SMUBRID",
+                    "TYPE"  : "STRING",
+                    "INDEX" : 4
+                },
+                {
+                    "NAME"  : "SMNABTCH",
+                    "TYPE"  : "STRING",
+                    "INDEX" : 5
+                },
+                {
+                    "NAME"  : "SMNABTCHT",
+                    "TYPE"  : "STRING",
+                    "INDEX" : 6
+                },
+                {
+                    "NAME"  : "SMGEBTCH",
+                    "TYPE"  : "STRING",
+                    "INDEX" : 7
+                }
+            ],
+            "FILENAME" : "isb-cgc-dev/phyliss/GTEx_subset_SampleAttributes.txt",
+            "PLATFORM" : "platform",
+            "PIPELINE" : "pipeline",
+            "DATATYPE" : "user_gen"
+        },
+        {
+            "COLUMNS" : [
+                {
+                    "NAME"  : "SUBJID",
+                    "TYPE"  : "STRING",
+                    "INDEX" : 1,
+                    "MAP_TO" : "SampleBarcode"
+                },
+                {
+                    "NAME"  : "GENDER",
+                    "TYPE"  : "INTEGER",
+                    "INDEX" : 2
+                },
+                {
+                    "NAME"  : "AGE",
+                    "TYPE"  : "STRING",
+                    "INDEX" : 3
+                },
+                {
+                    "NAME"  : "DTHHRDY",
+                    "TYPE"  : "INTEGER",
+                    "INDEX" : 4
+                }
+            ],
+            "FILENAME" : "isb-cgc-dev/phyliss/GTEx_subset_SubjectPhenotypesDS.txt",
+            "PLATFORM" : "platform1",
+            "PIPELINE" : "pipeline1",
+            "DATATYPE" : "user_gen"
+        }
+    ],
+    "USER_METADATA_TABLES": {
+        "METADATA_DATA" : "user_metadata_1_1",
+        "METADATA_SAMPLES" : "user_metadata_samples_1_1",
+        "FEATURE_DEFS": "user_feature_defs_1_1"
+    },
+    "USER_PROJECT" : 1,
+    "STUDY" : 1,
+    "BUCKET" : "isb-cgc-dev",
+    "GOOGLE_PROJECT" : "isb-cgc",
+    "BIGQUERY_DATASET" : "test"
+}
