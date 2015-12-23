@@ -23,6 +23,11 @@ from bigquery_etl.load import load_data_from_file
 import sys
 import pandas as pd
 from metadata_updates import update_metadata_data_list, insert_metadata_samples, insert_feature_defs_list
+import os
+from os.path import join, dirname
+from utils import dotenv
+
+dotenv.read_dotenv(join(dirname(__file__), '../.env'))
 
 
 def process_user_gen_files(project_id, user_project_id, study_id, bucket_name, bq_dataset, cloudsql_tables, files):
@@ -42,18 +47,14 @@ def process_user_gen_files(project_id, user_project_id, study_id, bucket_name, b
         all_columns += file['COLUMNS']
 
         metadata = {
-            'AliquotBarcode': file.get('ALIQUOTBARCODE', ''),
-            'SampleBarcode': file.get('SAMPLEBARCODE', ''),
-            'ParticipantBarcode': file.get('PARTICIPANTBARCODE', ''),
-            'Study': study_id,
-            'SampleTypeLetterCode': file.get('SAMPLETYPE', ''),
-            'Platform': file.get('PLATFORM', ''),
-            'Pipeline': file.get('PIPELINE', ''),
-            'DataCenterName': file.get('DATACENTER', ''),
-            'Project': user_project_id,
-            'Filepath': file['FILENAME'],
-            'FileName': file['FILENAME'].split('/')[-1],
-            'DataType': file['DATATYPE']
+            'sample_barcode': file.get('SAMPLEBARCODE', ''),
+            'participant_barcode': file.get('PARTICIPANTBARCODE', ''),
+            'study_id': study_id,
+            'platform': file.get('PLATFORM', ''),
+            'pipeline': file.get('PIPELINE', ''),
+            'file_path': file['FILENAME'],
+            'file_name': file['FILENAME'].split('/')[-1],
+            'data_type': file['DATATYPE']
         }
 
         # download, convert to df
@@ -61,7 +62,6 @@ def process_user_gen_files(project_id, user_project_id, study_id, bucket_name, b
 
         # Get column mapping
         column_mapping = get_column_mapping(file['COLUMNS'])
-
         if idx == 0:
             data_df = convert_file_to_dataframe(filebuffer, skiprows=0, header=0)
             data_df = cleanup_dataframe(data_df)
@@ -80,7 +80,7 @@ def process_user_gen_files(project_id, user_project_id, study_id, bucket_name, b
             insert_metadata(new_df, metadata, cloudsql_tables['METADATA_DATA'])
 
             # TODO: Write function to check for participant barcodes, for now, we assume each file contains SampleBarcode Mapping
-            data_df = pd.merge(data_df, new_df, on='SampleBarcode', how='outer')
+            data_df = pd.merge(data_df, new_df, on='sample_barcode', how='outer')
 
     # For complete dataframe, create metadata_samples rows
     print 'Inserting into data into {0}.'.format(cloudsql_tables['METADATA_SAMPLES'])
@@ -93,10 +93,11 @@ def process_user_gen_files(project_id, user_project_id, study_id, bucket_name, b
 
     # Update and create bq table file
     temp_outfile = cloudsql_tables['METADATA_SAMPLES'] + '.out'
-    gcs.convert_df_to_njson_and_upload(data_df, temp_outfile, tmp_bucket='isb-cgc-dev')
+    tmp_bucket = os.environ.get('tmp_bucket_location')
+    gcs.convert_df_to_njson_and_upload(data_df, temp_outfile, tmp_bucket=tmp_bucket)
 
     # Using temporary file location (in case we don't have write permissions on user's bucket?
-    source_path = 'gs://isb-cgc-dev/' + temp_outfile
+    source_path = 'gs://' + tmp_bucket + '/' + temp_outfile
 
     schema = generate_bq_schema(all_columns)
     table_name = 'cgc_user_{0}_{1}'.format(user_project_id, study_id)
@@ -118,7 +119,7 @@ def process_user_gen_files(project_id, user_project_id, study_id, bucket_name, b
 
     # Delete temporary files
     print 'Deleting temporary file {0}'.format(temp_outfile)
-    gcs = GcsConnector(project_id, 'isb-cgc-dev')
+    gcs = GcsConnector(project_id, tmp_bucket)
     gcs.delete_blob(temp_outfile)
 
 
@@ -126,16 +127,19 @@ def get_column_mapping(columns):
     column_map = {}
     for column in columns:
         if 'MAP_TO' in column.keys():
-            column_map[column['NAME']] = column['MAP_TO']
+            # pandas automatically replaces spaces with underscores, so we will too,
+            # then map them to provided column headers
+            column_map[column['NAME'].replace(' ', '_')] = column['MAP_TO']
     return column_map
 
 
 def insert_metadata(data_df, metadata, table):
-    sample_barcodes = list(set([k for d, k in data_df['SampleBarcode'].iteritems()]))
+    sample_barcodes = list(set([k for d, k in data_df['sample_barcode'].iteritems()]))
     sample_metadata_list = []
     for barcode in sample_barcodes:
-        metadata['SampleBarcode'] = barcode
-        sample_metadata_list.append(metadata)
+        new_metadata = metadata.copy()
+        new_metadata['sample_barcode'] = barcode
+        sample_metadata_list.append(new_metadata)
     update_metadata_data_list(table, sample_metadata_list)
 
 def generate_bq_schema(columns):
@@ -147,7 +151,13 @@ def generate_bq_schema(columns):
             column['NAME'] = column['MAP_TO']
         if column['NAME'] not in seen_columns:
             seen_columns.append(column['NAME'])
-            obj.append({'name': column['NAME'], 'type': column['TYPE']})
+            if column['TYPE'].lower().startswith('varchar'):
+                type = 'STRING'
+            elif column['TYPE'].lower() == 'float':
+                type = 'FLOAT'
+            else:
+                type = 'INTEGER'
+            obj.append({'name': column['NAME'], 'type': type})
     return obj
 
 
@@ -159,13 +169,13 @@ BqMapId: bq_project:bq_dataset:bq_table:column_name
 def generate_feature_defs(study_id, bq_project, bq_dataset, bq_table, schema):
     feature_defs = []
     for column in schema:
-        if column['name'] != 'SampleBarcode':
+        if column['name'] != 'sample_barcode':
             feature_name = column['name']
             bq_map = ':'.join([bq_project, bq_dataset, bq_table, column['name']])
             if column['type'] == 'STRING':
-                datatype = 'C'
+                datatype = 0
             else:
-                datatype = 'N'
+                datatype = 1
             feature_defs.append((study_id, feature_name, bq_map, datatype))
     return feature_defs
 

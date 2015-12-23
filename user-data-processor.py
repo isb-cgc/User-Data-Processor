@@ -80,21 +80,18 @@ def main(user_data_config, etl_config_file):
             bucket_name = inputfilename.split('/')[0] # Get the bucketname
 
             metadata = {
-                'AliquotBarcode': file.get('ALIQUOTBARCODE', ''),
-                'SampleBarcode': file.get('SAMPLEBARCODE', ''),
-                'ParticipantBarcode': file.get('PARTICIPANTBARCODE', ''),
-                'Study': user_study,
-                'SampleTypeLetterCode': file.get('SAMPLETYPE', ''),
-                'Platform': file.get('PLATFORM', ''),
-                'Pipeline': file.get('PIPELINE', ''),
-                'DataCenterName': file.get('DATACENTER', ''),
-                'Project': user_project
+                'sample_barcode': file.get('SAMPLEBARCODE', ''),
+                'participant_barcode': file.get('PARTICIPANTBARCODE', ''),
+                'project_id': file.get('USER_PROJECT', ''),
+                'study_id': user_study,
+                'platform': file.get('PLATFORM', ''),
+                'pipeline': file.get('PIPELINE', ''),
             }
 
             # Update metadata_data table in cloudSQL
-            metadata['Filepath'] = inputfilename
-            metadata['FileName'] = inputfilename.split('/')[-1]
-            metadata['DataType'] = file['DATATYPE']
+            metadata['file_path'] = inputfilename
+            metadata['file_name'] = inputfilename.split('/')[-1]
+            metadata['data_type'] = file['DATATYPE']
 
             # Transform and load metadata
             user_gen.molecular_processing.parse_file(project_id,

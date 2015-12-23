@@ -129,7 +129,7 @@ Function to update rows in metadata_samples with has_datatype information.
 Create new row if doesn't exist.
 '''
 def update_molecular_metadata_samples_list(table, datatype, sample_barcodes):
-    insert_stmt = 'INSERT INTO {0} (SampleBarcode, has_{1}) VALUES (%s, %s) ON DUPLICATE KEY UPDATE has_{2}=1;'.format(table, datatype, datatype)
+    insert_stmt = 'INSERT INTO {0} (sample_barcode, has_{1}) VALUES (%s, %s) ON DUPLICATE KEY UPDATE has_{2}=1;'.format(table, datatype, datatype)
     value_list = []
     for barcode in sample_barcodes:
         value_list.append((barcode, 1))
@@ -145,7 +145,7 @@ def update_molecular_metadata_samples_list(table, datatype, sample_barcodes):
 Function to insert one new feature definition
 '''
 def insert_feature_defs(sql_table, study_id, name, bq_mapping, type):
-    insert_stmt = 'INSERT INTO {0} (Study, FeatureName, BqMapId, Type) VALUES (%s,%s,%s,%s);'
+    insert_stmt = 'INSERT INTO {0} (study_id, feature_name, bq_map_id, is_numeric) VALUES (%s,%s,%s,%s);'
     db = cloudsql_connector()
     cursor = db.cursor(MySQLdb.cursors.DictCursor)
     cursor.executemany(insert_stmt, (study_id, name, bq_mapping, type))
@@ -157,7 +157,7 @@ def insert_feature_defs(sql_table, study_id, name, bq_mapping, type):
 Function to insert list of new feature definitions
 '''
 def insert_feature_defs_list(sql_table, data_list):
-    insert_stmt = 'INSERT INTO {0} (Study, FeatureName, BqMapId, Type) VALUES (%s,%s,%s,%s);'.format(sql_table)
+    insert_stmt = 'INSERT INTO {0} (study_id, feature_name, bq_map_id, is_numeric) VALUES (%s,%s,%s,%s);'.format(sql_table)
     print insert_stmt
     db = cloudsql_connector()
     cursor = db.cursor(MySQLdb.cursors.DictCursor)

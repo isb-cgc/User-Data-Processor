@@ -24,7 +24,11 @@ import sys
 import pandas as pd
 from metadata_updates import update_metadata_data_list, update_molecular_metadata_samples_list, insert_feature_defs_list
 from bigquery_table_schemas import get_molecular_schema
+import os
+from os.path import join, dirname
+from utils import dotenv
 
+dotenv.read_dotenv(join(dirname(__file__), '../.env'))
 
 def parse_file(project_id, bq_dataset, bucket_name, file_data, filename, outfilename, metadata, cloudsql_tables):
 
@@ -58,10 +62,10 @@ def parse_file(project_id, bq_dataset, bucket_name, file_data, filename, outfile
                 new_df_obj = {}
 
                 new_df_obj['SampleBarcode'] = i
-                new_df_obj['Project'] = metadata['Project']
-                new_df_obj['Study'] = metadata['Study']
-                new_df_obj['Platform'] = metadata['Platform']
-                new_df_obj['Pipeline'] = metadata['Pipeline']
+                new_df_obj['Project'] = metadata['project_id']
+                new_df_obj['Study'] = metadata['study_id']
+                new_df_obj['Platform'] = metadata['platform']
+                new_df_obj['Pipeline'] = metadata['pipeline']
 
                 # Optional values
                 new_df_obj['Symbol'] = map_values['Symbol'][k] if 'Symbol' in map_values.keys() else ''
@@ -76,8 +80,9 @@ def parse_file(project_id, bq_dataset, bucket_name, file_data, filename, outfile
     sample_barcodes = list(set([k for d, k in new_df['SampleBarcode'].iteritems()]))
     sample_metadata_list = []
     for barcode in sample_barcodes:
-        metadata['SampleBarcode'] = barcode
-        sample_metadata_list.append(metadata)
+        new_metadata = metadata.copy()
+        new_metadata['SampleBarcode'] = barcode
+        sample_metadata_list.append(new_metadata)
     update_metadata_data_list(cloudsql_tables['METADATA_DATA'], sample_metadata_list)
 
     # Update metadata_samples table
@@ -91,11 +96,12 @@ def parse_file(project_id, bq_dataset, bucket_name, file_data, filename, outfile
     insert_feature_defs_list(cloudsql_tables['FEATURE_DEFS'], feature_defs)
 
     # upload the contents of the dataframe in njson format
+    tmp_bucket = os.environ.get('tmp_bucket_location')
     gcs.convert_df_to_njson_and_upload(new_df, outfilename, metadata=metadata, tmp_bucket='isb-cgc-dev')
 
     # Load into BigQuery
     # Using temporary file location (in case we don't have write permissions on user's bucket?)
-    source_path = 'gs://isb-cgc-dev/' + outfilename
+    source_path = 'gs://' + tmp_bucket + '/' + outfilename
     schema = get_molecular_schema()
 
     load_data_from_file.run(
@@ -110,7 +116,7 @@ def parse_file(project_id, bq_dataset, bucket_name, file_data, filename, outfile
 
     # Delete temporary files
     print 'Deleting temporary file {0}'.format(outfilename)
-    gcs = GcsConnector(project_id, 'isb-cgc-dev')
+    gcs = GcsConnector(project_id, tmp_bucket)
     gcs.delete_blob(outfilename)
 
 def get_column_mapping(datatype):

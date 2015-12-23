@@ -4,29 +4,28 @@ from utils.sql_connector import cloudsql_connector
 
 def user_metadata():
     return [
-        {'column_name': 'Project',
+
+        {'column_name': 'study_id',
          'type': 'INTEGER'},
-        {'column_name': 'Study',
-         'type': 'INTEGER'},
-        {'column_name': 'SampleBarcode',
+        {'column_name': 'sample_barcode',
          'type': 'VARCHAR(200)'},
-        {'column_name': 'Filepath',
+        {'column_name': 'file_path',
          'type': 'VARCHAR(200)'},
-        {'column_name': 'FileName',
+        {'column_name': 'file_name',
          'type': 'VARCHAR(200)'},
-        {'column_name': 'DataType',
+        {'column_name': 'data_type',
          'type': 'VARCHAR(200)'},
-        {'column_name': 'Pipeline',
+        {'column_name': 'pipeline',
          'type': 'VARCHAR(200)'},
-        {'column_name': 'Platform',
+        {'column_name': 'platform',
          'type': 'VARCHAR(200)'}
     ]
 
 def user_metadata_sample():
     return [
-        {'column_name': 'ParticipantBarcode',
+        {'column_name': 'participant_barcode',
          'type': 'VARCHAR(200)'},
-        {'column_name': 'SampleBarcode',
+        {'column_name': 'sample_barcode',
          'type': 'VARCHAR(200)'},
         {'column_name': 'has_mrna',
          'type': 'BOOLEAN'},
@@ -40,13 +39,13 @@ def user_metadata_sample():
 
 def user_feature_def():
     return [
-        {'column_name': 'Study',
+        {'column_name': 'study_id',
          'type': 'INTEGER'},
-        {'column_name': 'FeatureName',
+        {'column_name': 'feature_name',
          'type': 'VARCHAR(200)'},
-        {'column_name': 'BqMapId',
+        {'column_name': 'bq_map_id',
          'type': 'VARCHAR(200)'},
-        {'column_name': 'Type',
+        {'column_name': 'is_numeric',
          'type': 'VARCHAR(200)'}
     ]
 

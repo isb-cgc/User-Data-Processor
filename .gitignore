@@ -11,4 +11,5 @@ __pycache__/
 
 client_secrets.json
 privatekey.json
+*.pem
 .DS_STORE
