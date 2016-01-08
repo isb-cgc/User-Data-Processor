@@ -144,11 +144,11 @@ def update_molecular_metadata_samples_list(table, datatype, sample_barcodes):
 '''
 Function to insert one new feature definition
 '''
-def insert_feature_defs(sql_table, study_id, name, bq_mapping, type):
-    insert_stmt = 'INSERT INTO {0} (study_id, feature_name, bq_map_id, is_numeric) VALUES (%s,%s,%s,%s);'
+def insert_feature_defs(sql_table, study_id, name, bq_mapping, shared_map_id, type):
+    insert_stmt = 'INSERT INTO {0} (study_id, feature_name, bq_map_id, shared_map_id, is_numeric) VALUES (%s,%s,%s,%s,%s);'
     db = cloudsql_connector()
     cursor = db.cursor(MySQLdb.cursors.DictCursor)
-    cursor.executemany(insert_stmt, (study_id, name, bq_mapping, type))
+    cursor.executemany(insert_stmt, (study_id, name, bq_mapping, shared_map_id, type))
     db.commit()
     cursor.close()
     db.close()
@@ -157,7 +157,7 @@ def insert_feature_defs(sql_table, study_id, name, bq_mapping, type):
 Function to insert list of new feature definitions
 '''
 def insert_feature_defs_list(sql_table, data_list):
-    insert_stmt = 'INSERT INTO {0} (study_id, feature_name, bq_map_id, is_numeric) VALUES (%s,%s,%s,%s);'.format(sql_table)
+    insert_stmt = 'INSERT INTO {0} (study_id, feature_name, bq_map_id, shared_map_id, is_numeric) VALUES (%s,%s,%s,%s,%s);'.format(sql_table)
     print insert_stmt
     db = cloudsql_connector()
     cursor = db.cursor(MySQLdb.cursors.DictCursor)
