@@ -97,7 +97,7 @@ def parse_file(project_id, bq_dataset, bucket_name, file_data, filename, outfile
 
     # upload the contents of the dataframe in njson format
     tmp_bucket = os.environ.get('tmp_bucket_location')
-    gcs.convert_df_to_njson_and_upload(new_df, outfilename, metadata=metadata, tmp_bucket='isb-cgc-dev')
+    gcs.convert_df_to_njson_and_upload(new_df, outfilename, metadata=metadata, tmp_bucket=tmp_bucket)
 
     # Load into BigQuery
     # Using temporary file location (in case we don't have write permissions on user's bucket?)
