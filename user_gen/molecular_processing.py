@@ -175,11 +175,11 @@ def generate_feature_Defs(datatype, study_id, bq_project, bq_dataset, bq_table, 
         for symbol in unique_symbols:
             feature_name = '{0} {1}'.format(datatype_name_mapping[datatype]['FeatureName'], symbol)
             bqmap = ':'.join([bq_project, bq_dataset, bq_table, datatype_name_mapping[datatype]['BqMapId'], symbol, 'Level'])
-            feature_defs.append((study_id, feature_name, bqmap, None, 'N'))
+            feature_defs.append((study_id, feature_name, bqmap, None, True))
     else:
         feature_name = datatype_name_mapping[datatype]['FeatureName']
         bqmap = ':'.join([bq_project, bq_dataset, bq_table, datatype_name_mapping[datatype]['BqMapId'], 'Level'])
-        feature_defs.append((study_id, feature_name, bqmap, None, 'N'))
+        feature_defs.append((study_id, feature_name, bqmap, None, True))
 
     return feature_defs
 
