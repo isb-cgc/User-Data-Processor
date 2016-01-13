@@ -50,7 +50,7 @@ def parse_file(project_id, bq_dataset, bucket_name, file_data, filename, outfile
     map_values = {}
 
     # Get basic column information depending on datatype
-    column_map = get_column_mapping(metadata['DataType'])
+    column_map = get_column_mapping(metadata['data_type'])
 
     # Column headers are sample ids
     for i, j in data_df.iteritems():
@@ -86,11 +86,11 @@ def parse_file(project_id, bq_dataset, bucket_name, file_data, filename, outfile
     update_metadata_data_list(cloudsql_tables['METADATA_DATA'], sample_metadata_list)
 
     # Update metadata_samples table
-    update_molecular_metadata_samples_list(cloudsql_tables['METADATA_SAMPLES'], metadata['DataType'], sample_barcodes)
+    update_molecular_metadata_samples_list(cloudsql_tables['METADATA_SAMPLES'], metadata['data_type'], sample_barcodes)
 
     # Generate feature names and bq_mappings
     table_name = file_data['BIGQUERY_TABLE_NAME']
-    feature_defs = generate_feature_Defs(metadata['DataType'], metadata['Study'], project_id, bq_dataset, table_name, new_df)
+    feature_defs = generate_feature_Defs(metadata['data_type'], metadata['Study'], project_id, bq_dataset, table_name, new_df)
 
     # Update feature_defs table
     insert_feature_defs_list(cloudsql_tables['FEATURE_DEFS'], feature_defs)
