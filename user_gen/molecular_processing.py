@@ -50,7 +50,7 @@ def parse_file(project_id, bq_dataset, bucket_name, file_data, filename, outfile
     map_values = {}
 
     # Get basic column information depending on datatype
-    column_map = get_column_mapping(metadata['DataType'])
+    column_map = get_column_mapping(metadata['data_type'])
 
     # Column headers are sample ids
     for i, j in data_df.iteritems():
