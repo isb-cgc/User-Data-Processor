@@ -61,7 +61,7 @@ def parse_file(project_id, bq_dataset, bucket_name, file_data, filename, outfile
             for k, m in j.iteritems():
                 new_df_obj = {}
 
-                new_df_obj['SampleBarcode'] = i
+                new_df_obj['sample_barcode'] = i # Normalized to match user_gen
                 new_df_obj['Project'] = metadata['project_id']
                 new_df_obj['Study'] = metadata['study_id']
                 new_df_obj['Platform'] = metadata['platform']
