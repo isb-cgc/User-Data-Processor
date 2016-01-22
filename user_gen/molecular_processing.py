@@ -61,7 +61,7 @@ def parse_file(project_id, bq_dataset, bucket_name, file_data, filename, outfile
             for k, m in j.iteritems():
                 new_df_obj = {}
 
-                new_df_obj['SampleBarcode'] = i
+                new_df_obj['sample_barcode'] = i # Normalized to match user_gen
                 new_df_obj['Project'] = metadata['project_id']
                 new_df_obj['Study'] = metadata['study_id']
                 new_df_obj['Platform'] = metadata['platform']
@@ -81,23 +81,23 @@ def parse_file(project_id, bq_dataset, bucket_name, file_data, filename, outfile
     sample_metadata_list = []
     for barcode in sample_barcodes:
         new_metadata = metadata.copy()
-        new_metadata['SampleBarcode'] = barcode
+        new_metadata['sample_barcode'] = barcode
         sample_metadata_list.append(new_metadata)
     update_metadata_data_list(cloudsql_tables['METADATA_DATA'], sample_metadata_list)
 
     # Update metadata_samples table
-    update_molecular_metadata_samples_list(cloudsql_tables['METADATA_SAMPLES'], metadata['DataType'], sample_barcodes)
+    update_molecular_metadata_samples_list(cloudsql_tables['METADATA_SAMPLES'], metadata['data_type'], sample_barcodes)
 
     # Generate feature names and bq_mappings
     table_name = file_data['BIGQUERY_TABLE_NAME']
-    feature_defs = generate_feature_Defs(metadata['DataType'], metadata['Study'], project_id, bq_dataset, table_name, new_df)
+    feature_defs = generate_feature_Defs(metadata['data_type'], metadata['study_id'], project_id, bq_dataset, table_name, new_df)
 
     # Update feature_defs table
     insert_feature_defs_list(cloudsql_tables['FEATURE_DEFS'], feature_defs)
 
     # upload the contents of the dataframe in njson format
     tmp_bucket = os.environ.get('tmp_bucket_location')
-    gcs.convert_df_to_njson_and_upload(new_df, outfilename, metadata=metadata, tmp_bucket='isb-cgc-dev')
+    gcs.convert_df_to_njson_and_upload(new_df, outfilename, metadata=metadata, tmp_bucket=tmp_bucket)
 
     # Load into BigQuery
     # Using temporary file location (in case we don't have write permissions on user's bucket?)
@@ -175,11 +175,11 @@ def generate_feature_Defs(datatype, study_id, bq_project, bq_dataset, bq_table, 
         for symbol in unique_symbols:
             feature_name = '{0} {1}'.format(datatype_name_mapping[datatype]['FeatureName'], symbol)
             bqmap = ':'.join([bq_project, bq_dataset, bq_table, datatype_name_mapping[datatype]['BqMapId'], symbol, 'Level'])
-            feature_defs.append((study_id, feature_name, bqmap, 'N'))
+            feature_defs.append((study_id, feature_name, bqmap, None, True))
     else:
         feature_name = datatype_name_mapping[datatype]['FeatureName']
         bqmap = ':'.join([bq_project, bq_dataset, bq_table, datatype_name_mapping[datatype]['BqMapId'], 'Level'])
-        feature_defs.append((study_id, feature_name, bqmap, 'N'))
+        feature_defs.append((study_id, feature_name, bqmap, None, True))
 
     return feature_defs
 

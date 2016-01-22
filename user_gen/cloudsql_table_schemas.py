@@ -45,6 +45,8 @@ def user_feature_def():
          'type': 'VARCHAR(200)'},
         {'column_name': 'bq_map_id',
          'type': 'VARCHAR(200)'},
+        {'column_name': 'shared_map_id',
+         'type': 'VARCHAR(200)'},
         {'column_name': 'is_numeric',
          'type': 'VARCHAR(200)'}
     ]

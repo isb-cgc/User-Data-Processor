@@ -88,7 +88,7 @@ def main(user_data_config, etl_config_file):
             metadata = {
                 'sample_barcode': file.get('SAMPLEBARCODE', ''),
                 'participant_barcode': file.get('PARTICIPANTBARCODE', ''),
-                'project_id': file.get('USER_PROJECT', ''),
+                'project_id': user_project,
                 'study_id': user_study,
                 'platform': file.get('PLATFORM', ''),
                 'pipeline': file.get('PIPELINE', ''),

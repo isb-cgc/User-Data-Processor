@@ -157,7 +157,7 @@ def generate_bq_schema(columns):
                 type = 'FLOAT'
             else:
                 type = 'INTEGER'
-            obj.append({'name': column['NAME'], 'type': type})
+            obj.append({'name': column['NAME'], 'type': type, 'shared_id': column['SHARED_ID']})
     return obj
 
 
@@ -176,7 +176,7 @@ def generate_feature_defs(study_id, bq_project, bq_dataset, bq_table, schema):
                 datatype = 0
             else:
                 datatype = 1
-            feature_defs.append((study_id, feature_name, bq_map, datatype))
+            feature_defs.append((study_id, feature_name, bq_map, column['shared_id'], datatype))
     return feature_defs
 
 if __name__ == '__main__':
