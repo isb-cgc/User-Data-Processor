@@ -77,7 +77,7 @@ def parse_file(project_id, bq_dataset, bucket_name, file_data, filename, outfile
     new_df = pd.DataFrame(new_df_data)
 
     # Get unique barcodes and update metadata_data table
-    sample_barcodes = list(set([k for d, k in new_df['SampleBarcode'].iteritems()]))
+    sample_barcodes = list(set([k for d, k in new_df['sample_barcode'].iteritems()]))
     sample_metadata_list = []
     for barcode in sample_barcodes:
         new_metadata = metadata.copy()
