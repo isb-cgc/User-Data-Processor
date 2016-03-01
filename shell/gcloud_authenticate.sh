@@ -6,6 +6,6 @@ echo "{\
   \"client_id\": \"$GAE_CLIENT_ID\",\
   \"type\": \"service_account\"\
 }" | tee privatekey.json > /dev/null 2> /dev/null
-/usr/local/bin/gcloud auth activate-service-account --key-file privatekey.json
-/usr/local/bin/gcloud config set project "$GAE_PROJECT_ID"
-/usr/local/bin/gsutil -d ls gs://test-user-data-upload
+/usr/bin/gcloud auth activate-service-account --key-file privatekey.json
+/usr/bin/gcloud config set project "$GAE_PROJECT_ID"
+/usr/bin/gsutil -d ls gs://test-user-data-upload
