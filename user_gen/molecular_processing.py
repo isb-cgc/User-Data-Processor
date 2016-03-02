@@ -96,7 +96,7 @@ def parse_file(project_id, bq_dataset, bucket_name, file_data, filename, outfile
     insert_feature_defs_list(cloudsql_tables['FEATURE_DEFS'], feature_defs)
 
     # upload the contents of the dataframe in njson format
-    tmp_bucket = os.environ.get('tmp_bucket_location')
+    tmp_bucket = os.environ.get('tmp_bucket')
     gcs.convert_df_to_njson_and_upload(new_df, outfilename, metadata=metadata, tmp_bucket=tmp_bucket)
 
     # Load into BigQuery
