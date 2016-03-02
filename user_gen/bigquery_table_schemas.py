@@ -1,10 +1,10 @@
 def get_molecular_schema():
     return [
-        {'name': 'SampleBarcode',
+        {'name': 'sample_barcode',
          'type': 'STRING'},
-        {'name': 'Project',
+        {'name': 'project_id',
          'type': 'INTEGER'},
-        {'name': 'Study',
+        {'name': 'study_id',
          'type': 'INTEGER'},
         {'name': 'Platform',
          'type': 'STRING'},
