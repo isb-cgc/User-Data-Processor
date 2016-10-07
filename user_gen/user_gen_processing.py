@@ -57,6 +57,8 @@ def process_user_gen_files(project_id, user_project_id, study_id, bucket_name, b
             'data_type': file['DATATYPE']
         }
 
+
+
         # download, convert to df
         filebuffer = gcs.download_blob_to_file(blob_name)
 
@@ -65,6 +67,9 @@ def process_user_gen_files(project_id, user_project_id, study_id, bucket_name, b
         if idx == 0:
             data_df = convert_file_to_dataframe(filebuffer, skiprows=0, header=0)
             data_df = cleanup_dataframe(data_df)
+            if metadata['participant_barcode'] == '':
+                # Duplicate samplebarcode with prepended 'cgc_'
+                data_df.participant_barcode[data_df.participant_barcode==None] = data_df.sample_barcode[data_df.participant_barcode==None]
             data_df.rename(columns=column_mapping, inplace=True)
 
             # Generate Metadata for this file
