@@ -71,10 +71,10 @@ def process_user_gen_files(project_id, user_project_id, study_id, bucket_name, b
 
             if metadata['participant_barcode'] == '':
                 # Duplicate samplebarcode with prepended 'cgc_'
-                data_df['participant_barcode'] = 'cgc_' + data_df[metadata['sample_barcode']]
+                data_df['participant_barcode'] = 'cgc_' + data_df['sample_barcode']
             else:
                 # Make sure to fill in empty participant barcodes
-                data_df[metadata['participant_barcode']][data_df[metadata['participant_barcode']]==None] = 'cgc_' + data_df[metadata['sample_barcode']][data_df[metadata['participant_barcode']]==None]
+                data_df[metadata['participant_barcode']][data_df['participant_barcode']==None] = 'cgc_' + data_df['sample_barcode'][data_df['participant_barcode']==None]
 
 
             # Generate Metadata for this file
