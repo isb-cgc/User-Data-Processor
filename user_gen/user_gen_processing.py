@@ -69,7 +69,10 @@ def process_user_gen_files(project_id, user_project_id, study_id, bucket_name, b
             data_df = cleanup_dataframe(data_df)
             if metadata['participant_barcode'] == '':
                 # Duplicate samplebarcode with prepended 'cgc_'
-                data_df.participant_barcode[data_df.participant_barcode==None] = data_df.sample_barcode[data_df.participant_barcode==None]
+                data_df['participant_barcode'] = 'cgc_' + data_df['sample_barcode']
+            else:
+                # Make sure to fill in empty participant barcodes
+                data_df['participant_barcode'][data_df['participant_barcode']==None] = 'cgc_' + data_df['sample_barcode'][data_df['participant_barcode']==None]
             data_df.rename(columns=column_mapping, inplace=True)
 
             # Generate Metadata for this file
