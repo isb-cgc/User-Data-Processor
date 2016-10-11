@@ -37,12 +37,15 @@ from bigquery_etl.utils import dotenv
 log = logging.getLogger(__name__)
 dotenv.read_dotenv(join(dirname(__file__), '../../.env'))
 
+PRIVATEKEY_PATH = join(dirname(__file__), '../../', os.environ.get('privatekey_path'))
+print PRIVATEKEY_PATH
+
 class GcsConnector(object):
     """Google Cloud Storage Connector
     """
     def __init__(self, project, bucket_name, tempdir='/tmp'):
         # connect to the cloud bucket
-        os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = os.environ.get('privatekey_path')
+        os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = PRIVATEKEY_PATH
         self.client = storage.Client(project)
         self.bucket = self.client.get_bucket(bucket_name)
         self.tempdir = tempdir

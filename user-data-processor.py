@@ -18,6 +18,7 @@ import os
 
 import user_gen.molecular_processing
 import user_gen.user_gen_processing
+import user_gen.vcf_processing
 import argparse
 
 
@@ -50,12 +51,15 @@ def main(user_data_config, etl_config_file):
     # Check for user_gen files and process them first
     user_gen_list = []
     mol_file_list = []
+    vcf_file_list = []
     low_level_list = []
     for file in data['FILES']:
         if file['DATATYPE'] == 'user_gen':
             user_gen_list.append(file)
         elif file['DATATYPE'] == 'low_level':
             low_level_list.append(file)
+        elif file['DATATYPE'] == 'vcf_file':
+            vcf_file_list.append(file)
         else:
             mol_file_list.append(file)
 
@@ -74,6 +78,16 @@ def main(user_data_config, etl_config_file):
                                                             bq_dataset,
                                                             cloudsql_tables,
                                                             user_gen_list)
+
+    # Process all VCF Files
+    if len(vcf_file_list):
+        user_gen.vcf_processing.process_vcf_files(project_id,
+                                                  user_project,
+                                                  user_study,
+                                                  bucketname,
+                                                  bq_dataset,
+                                                  cloudsql_tables,
+                                                  vcf_file_list)
 
     # Process all other datatype files
     if len(mol_file_list):
