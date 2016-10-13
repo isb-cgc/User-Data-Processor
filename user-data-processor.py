@@ -127,39 +127,38 @@ def main(user_data_config, etl_config_file):
 
     if len(low_level_list):
         for file in low_level_list:
-            for file in mol_file_list:
-                table_name = file['BIGQUERY_TABLE_NAME']
+            table_name = file['BIGQUERY_TABLE_NAME']
 
-                inputfilename = file['FILENAME']
-                blob_name = inputfilename.split('/')[
-                            1:]  # Path without bucket. Assuming bucket name appended to front of file path.
-                outputfilename = '{0}.out'.format(inputfilename.split('/')[-1])  # Get the actual file name
-                bucket_name = inputfilename.split('/')[0]  # Get the bucketname
+            inputfilename = file['FILENAME']
+            blob_name = inputfilename.split('/')[
+                        1:]  # Path without bucket. Assuming bucket name appended to front of file path.
+            outputfilename = '{0}.out'.format(inputfilename.split('/')[-1])  # Get the actual file name
+            bucket_name = inputfilename.split('/')[0]  # Get the bucketname
 
-                metadata = {
-                    'sample_barcode': file.get('SAMPLEBARCODE', ''),
-                    'participant_barcode': file.get('PARTICIPANTBARCODE', ''),
-                    'project_id': user_project,
-                    'study_id': user_study,
-                    'platform': file.get('PLATFORM', ''),
-                    'pipeline': file.get('PIPELINE', ''),
-                }
+            metadata = {
+                'sample_barcode': file.get('SAMPLEBARCODE', ''),
+                'participant_barcode': file.get('PARTICIPANTBARCODE', ''),
+                'project_id': user_project,
+                'study_id': user_study,
+                'platform': file.get('PLATFORM', ''),
+                'pipeline': file.get('PIPELINE', ''),
+            }
 
-                # Update metadata_data table in cloudSQL
-                metadata['file_path'] = inputfilename
-                metadata['file_name'] = inputfilename.split('/')[-1]
-                metadata['data_type'] = file['DATATYPE']
+            # Update metadata_data table in cloudSQL
+            metadata['file_path'] = inputfilename
+            metadata['file_name'] = inputfilename.split('/')[-1]
+            metadata['data_type'] = file['DATATYPE']
 
-                # Transform and load metadata
-                user_gen.low_level_processing.parse_file(project_id,
-                                                         bq_dataset,
-                                                         bucket_name,
-                                                         file,
-                                                         blob_name,
-                                                         outputfilename,
-                                                         metadata,
-                                                         cloudsql_tables
-                                                         )
+            # Transform and load metadata
+            user_gen.low_level_processing.parse_file(project_id,
+                                                     bq_dataset,
+                                                     bucket_name,
+                                                     file,
+                                                     blob_name,
+                                                     outputfilename,
+                                                     metadata,
+                                                     cloudsql_tables
+                                                     )
 
 
 if __name__ == '__main__':
