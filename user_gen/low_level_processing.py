@@ -56,6 +56,7 @@ def parse_file(project_id, bq_dataset, bucket_name, file_data, filename, outfile
     new_metadata['sample_barcode'] = 'low_level_data_barcode'
     new_metadata['file_path'] = filename
     sample_metadata_list.append(new_metadata)
+    print sample_metadata_list
     update_metadata_data_list(cloudsql_tables['METADATA_DATA'], sample_metadata_list)
 
 def get_column_mapping(columns):
