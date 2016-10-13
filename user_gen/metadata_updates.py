@@ -94,7 +94,8 @@ def update_metadata_data_list(table, metadata):
             else:
                 value_tuple += ((row[title]),)
         value_list.append(value_tuple)
-
+    print insert_stmt
+    print value_list
     db = cloudsql_connector()
     cursor = db.cursor(MySQLdb.cursors.DictCursor)
     cursor.executemany(insert_stmt, value_list)
