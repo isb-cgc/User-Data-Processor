@@ -146,7 +146,7 @@ def update_molecular_metadata_samples_list(table, datatype, sample_barcodes):
 Function to update empty participant barcode values
 '''
 def update_metadata_participants(table):
-    update_stmt = 'UPDATE {0} set participant_barcode=CONCAT("cgc_", sample_barcode) where participant_barcode is NULL;'
+    update_stmt = 'UPDATE {0} set participant_barcode=CONCAT("cgc_", sample_barcode) where participant_barcode is NULL;'.format(table)
     db = cloudsql_connector()
     cursor = db.cursor()
     cursor.execute(update_stmt)
