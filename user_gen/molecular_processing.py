@@ -22,7 +22,7 @@ from bigquery_etl.load import load_data_from_file
 from bigquery_etl.transform.tools import cleanup_dataframe
 import sys
 import pandas as pd
-from metadata_updates import update_metadata_data_list, update_molecular_metadata_samples_list, insert_feature_defs_list
+from metadata_updates import update_metadata_data_list, update_molecular_metadata_samples_list, insert_feature_defs_list, update_metadata_participants
 from bigquery_table_schemas import get_molecular_schema
 import os
 from os.path import join, dirname
@@ -87,6 +87,7 @@ def parse_file(project_id, bq_dataset, bucket_name, file_data, filename, outfile
 
     # Update metadata_samples table
     update_molecular_metadata_samples_list(cloudsql_tables['METADATA_SAMPLES'], metadata['data_type'], sample_barcodes)
+    update_metadata_participants(cloudsql_tables['METADATA_SAMPLES'])
 
     # Generate feature names and bq_mappings
     table_name = file_data['BIGQUERY_TABLE_NAME']

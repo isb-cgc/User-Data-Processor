@@ -143,6 +143,18 @@ def update_molecular_metadata_samples_list(table, datatype, sample_barcodes):
     db.close()
 
 '''
+Function to update empty participant barcode values
+'''
+def update_metadata_participants(table):
+    update_stmt = 'UPDATE {0} set participant_barcode=CONCAT("cgc_", sample_barcode) where participant_barcode is NULL;'
+    db = cloudsql_connector()
+    cursor = db.cursor()
+    cursor.execute(update_stmt)
+    cursor.close()
+    db.close()
+
+
+'''
 Function to insert one new feature definition
 '''
 def insert_feature_defs(sql_table, study_id, name, bq_mapping, shared_map_id, type):
