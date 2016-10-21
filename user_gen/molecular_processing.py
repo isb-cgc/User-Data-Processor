@@ -116,8 +116,8 @@ def parse_file(project_id, bq_dataset, bucket_name, file_data, filename, outfile
 
     # Delete temporary files
     print 'Deleting temporary file {0}'.format(outfilename)
-    # gcs = GcsConnector(project_id, tmp_bucket)
-    # gcs.delete_blob(outfilename)
+    gcs = GcsConnector(project_id, tmp_bucket)
+    gcs.delete_blob(outfilename)
 
 def get_column_mapping(datatype):
     column_map = {
