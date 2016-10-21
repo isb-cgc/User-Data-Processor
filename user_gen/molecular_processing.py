@@ -70,8 +70,7 @@ def parse_file(project_id, bq_dataset, bucket_name, file_data, filename, outfile
                 # Optional values
                 new_df_obj['Symbol'] = map_values['Symbol'][k] if 'Symbol' in map_values.keys() else ''
                 new_df_obj['ID'] = map_values['ID'][k] if 'ID' in map_values.keys() else ''
-                new_df_obj['TAB'] = map_values['TAB'][k] if 'TAB' in map_values.keys() else ''
-
+                new_df_obj['TAB'] = map_values['Tab'][k] if 'Tab' in map_values.keys() else ''
                 new_df_obj['Level'] = m
                 new_df_data.append(new_df_obj)
     new_df = pd.DataFrame(new_df_data)
