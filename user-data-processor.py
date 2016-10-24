@@ -33,8 +33,8 @@ def generate_bq_schema(columns):
 
 
 def main(user_data_config, etl_config_file):
+    print os.environ.get('SUCCESS_URL')
     schemas_dir = os.path.join(os.getcwd(), 'schemas/')
-
     configs = open(user_data_config).read()
     data = json.loads(configs)
 
