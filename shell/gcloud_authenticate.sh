@@ -8,4 +8,4 @@ echo "{\
 }" | tee privatekey.json > /dev/null 2> /dev/null
 /usr/bin/gcloud auth activate-service-account --key-file privatekey.json
 /usr/bin/gcloud config set project "$GAE_PROJECT_ID"
-/usr/bin/gsutil -d ls gs://test-user-data-upload
+/usr/bin/gsutil -d ls gs://uat-user-data-upload
