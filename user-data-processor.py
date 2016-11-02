@@ -18,6 +18,8 @@ import os
 
 import user_gen.molecular_processing
 import user_gen.user_gen_processing
+import user_gen.low_level_processing
+import user_gen.vcf_processing
 import argparse
 
 
@@ -31,8 +33,8 @@ def generate_bq_schema(columns):
 
 
 def main(user_data_config, etl_config_file):
+    print os.environ.get('SUCCESS_URL')
     schemas_dir = os.path.join(os.getcwd(), 'schemas/')
-
     configs = open(user_data_config).read()
     data = json.loads(configs)
 
@@ -50,12 +52,15 @@ def main(user_data_config, etl_config_file):
     # Check for user_gen files and process them first
     user_gen_list = []
     mol_file_list = []
+    vcf_file_list = []
     low_level_list = []
     for file in data['FILES']:
         if file['DATATYPE'] == 'user_gen':
             user_gen_list.append(file)
         elif file['DATATYPE'] == 'low_level':
             low_level_list.append(file)
+        elif file['DATATYPE'] == 'vcf_file':
+            vcf_file_list.append(file)
         else:
             mol_file_list.append(file)
 
@@ -74,6 +79,16 @@ def main(user_data_config, etl_config_file):
                                                             bq_dataset,
                                                             cloudsql_tables,
                                                             user_gen_list)
+
+    # Process all VCF Files
+    if len(vcf_file_list):
+        user_gen.vcf_processing.process_vcf_files(project_id,
+                                                  user_project,
+                                                  user_study,
+                                                  bucketname,
+                                                  bq_dataset,
+                                                  cloudsql_tables,
+                                                  vcf_file_list)
 
     # Process all other datatype files
     if len(mol_file_list):
@@ -112,8 +127,36 @@ def main(user_data_config, etl_config_file):
 
     if len(low_level_list):
         for file in low_level_list:
-            pass
-        pass
+            inputfilename = file['FILENAME']
+            blob_name = inputfilename.split('/')[
+                        1:]  # Path without bucket. Assuming bucket name appended to front of file path.
+            outputfilename = '{0}.out'.format(inputfilename.split('/')[-1])  # Get the actual file name
+            bucket_name = inputfilename.split('/')[0]  # Get the bucketname
+
+            metadata = {
+                'sample_barcode': file.get('SAMPLEBARCODE', ''),
+                'participant_barcode': file.get('PARTICIPANTBARCODE', ''),
+                'project_id': user_project,
+                'study_id': user_study,
+                'platform': file.get('PLATFORM', ''),
+                'pipeline': file.get('PIPELINE', ''),
+            }
+
+            # Update metadata_data table in cloudSQL
+            metadata['file_path'] = inputfilename
+            metadata['file_name'] = inputfilename.split('/')[-1]
+            metadata['data_type'] = file['DATATYPE']
+
+            # Transform and load metadata
+            user_gen.low_level_processing.parse_file(project_id,
+                                                     bq_dataset,
+                                                     bucket_name,
+                                                     file,
+                                                     blob_name,
+                                                     outputfilename,
+                                                     metadata,
+                                                     cloudsql_tables
+                                                     )
 
 
 if __name__ == '__main__':
