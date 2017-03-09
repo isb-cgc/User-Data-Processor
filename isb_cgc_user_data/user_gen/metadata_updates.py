@@ -1,7 +1,8 @@
 import MySQLdb
 import pandas as pd
-from cloudsql_table_schemas import user_metadata, user_feature_def, user_metadata_sample
-from utils.sql_connector import cloudsql_connector
+
+from cloudsql_table_schemas import user_metadata
+from isb_cgc_user_data.utils.sql_connector import cloudsql_connector
 
 
 def cloudsql_append_column(table, missing_column_names, all_columns, inputfilename):
@@ -74,7 +75,7 @@ def update_metadata_data(table, metadata):
     db.commit()
     cursor.close()
     db.close()
-
+s
 '''
 Function to append data to a given metadata_data table.
 Takes in a list of metadata objects

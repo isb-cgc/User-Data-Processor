@@ -13,12 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from bigquery_etl.extract.utils import convert_file_to_dataframe
-from bigquery_etl.extract.gcloud_wrapper import GcsConnector
-from bigquery_etl.transform.tools import *
-import json
+from isb_cgc_user_data.bigquery_etl.extract.gcloud_wrapper import GcsConnector
+from isb_cgc_user_data.bigquery_etl.extract.utils import convert_file_to_dataframe
 from gcloud import storage
- 
+
+
 #------------------------------------------
 # parse SDRF
 # deprecate this to get info from CloudSQL

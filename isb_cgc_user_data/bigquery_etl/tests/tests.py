@@ -13,8 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import pandas as pd
-from bigquery_etl.extract.gcloud_wrapper import GcsConnector
+from isb_cgc_user_data.bigquery_etl.extract import GcsConnector
 
 def assert_notnull_property(df, columns_list=[]):
     """

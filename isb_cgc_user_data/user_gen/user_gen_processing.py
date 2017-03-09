@@ -16,18 +16,20 @@
 """
 Script to parse user generated data
 """
-from bigquery_etl.extract.gcloud_wrapper import GcsConnector
-from bigquery_etl.extract.utils import convert_file_to_dataframe
-from bigquery_etl.transform.tools import cleanup_dataframe
-from bigquery_etl.load import load_data_from_file
-import sys
-import pandas as pd
-from metadata_updates import update_metadata_data_list, insert_metadata_samples, insert_feature_defs_list
 import os
+import sys
 from os.path import join, dirname
-from utils import dotenv
 
-dotenv.read_dotenv(join(dirname(__file__), '../.env'))
+import pandas as pd
+from isb_cgc_user_data.bigquery_etl.extract.gcloud_wrapper import GcsConnector
+from isb_cgc_user_data.bigquery_etl.extract.utils import convert_file_to_dataframe
+from isb_cgc_user_data.bigquery_etl.load import load_data_from_file
+from isb_cgc_user_data.bigquery_etl.transform.tools import cleanup_dataframe
+from isb_cgc_user_data.utils import dotenv
+
+from metadata_updates import update_metadata_data_list, insert_metadata_samples, insert_feature_defs_list
+
+dotenv.read_dotenv(join(dirname(__file__), '../../.env'))
 
 
 def process_user_gen_files(project_id, user_project_id, study_id, bucket_name, bq_dataset, cloudsql_tables, files):

@@ -16,19 +16,21 @@
 """Script to parse Protein files
 """
 
-from bigquery_etl.extract.gcloud_wrapper import GcsConnector
-from bigquery_etl.extract.utils import convert_file_to_dataframe
-from bigquery_etl.load import load_data_from_file
-from bigquery_etl.transform.tools import cleanup_dataframe
-import sys
-import pandas as pd
-from metadata_updates import update_metadata_data_list, update_molecular_metadata_samples_list, insert_feature_defs_list
-from bigquery_table_schemas import get_molecular_schema
 import os
+import sys
 from os.path import join, dirname
-from utils import dotenv
 
-dotenv.read_dotenv(join(dirname(__file__), '../.env'))
+import pandas as pd
+from isb_cgc_user_data.bigquery_etl.extract.gcloud_wrapper import GcsConnector
+from isb_cgc_user_data.bigquery_etl.extract.utils import convert_file_to_dataframe
+from isb_cgc_user_data.bigquery_etl.load import load_data_from_file
+from isb_cgc_user_data.bigquery_etl.transform.tools import cleanup_dataframe
+from isb_cgc_user_data.utils import dotenv
+
+from bigquery_table_schemas import get_molecular_schema
+from metadata_updates import update_metadata_data_list, update_molecular_metadata_samples_list, insert_feature_defs_list, update_metadata_participants
+
+dotenv.read_dotenv(join(dirname(__file__), '../../.env'))
 
 def parse_file(project_id, bq_dataset, bucket_name, file_data, filename, outfilename, metadata, cloudsql_tables):
 
@@ -70,8 +72,7 @@ def parse_file(project_id, bq_dataset, bucket_name, file_data, filename, outfile
                 # Optional values
                 new_df_obj['Symbol'] = map_values['Symbol'][k] if 'Symbol' in map_values.keys() else ''
                 new_df_obj['ID'] = map_values['ID'][k] if 'ID' in map_values.keys() else ''
-                new_df_obj['TAB'] = map_values['TAB'][k] if 'TAB' in map_values.keys() else ''
-
+                new_df_obj['TAB'] = map_values['Tab'][k] if 'Tab' in map_values.keys() else ''
                 new_df_obj['Level'] = m
                 new_df_data.append(new_df_obj)
     new_df = pd.DataFrame(new_df_data)
@@ -87,6 +88,7 @@ def parse_file(project_id, bq_dataset, bucket_name, file_data, filename, outfile
 
     # Update metadata_samples table
     update_molecular_metadata_samples_list(cloudsql_tables['METADATA_SAMPLES'], metadata['data_type'], sample_barcodes)
+    update_metadata_participants(cloudsql_tables['METADATA_SAMPLES'])
 
     # Generate feature names and bq_mappings
     table_name = file_data['BIGQUERY_TABLE_NAME']
@@ -182,19 +184,6 @@ def generate_feature_Defs(datatype, study_id, bq_project, bq_dataset, bq_table, 
         feature_defs.append((study_id, feature_name, bqmap, None, True))
 
     return feature_defs
-
-def process_vcf_files(project_id, user_project, user_study, bucketname, bq_dataset, cloudsql_tables, vcf_file_list):
-    print 'Begin processing user_gen files.'
-
-    # connect to the cloud bucket
-    gcs = GcsConnector(project_id, bucket_name)
-    data_df = pd.DataFrame()
-
-    # Run VCF to MAF processor
-
-    # Upload MAF to table
-
-    return True
 
 if __name__ == '__main__':
     project_id = sys.argv[1]

@@ -15,11 +15,13 @@
 
 """Script to parse MAF file
 """
-from bigquery_etl.extract.utils import convert_file_to_dataframe
-from bigquery_etl.transform.tools import cleanup_dataframe
+import os
+
 import MySQLdb
 import pandas as pd
-import os
+from isb_cgc_user_data.bigquery_etl.extract.utils import convert_file_to_dataframe
+from isb_cgc_user_data.bigquery_etl.transform.tools import cleanup_dataframe
+
 
 def convert_blob_to_dataframe(gcs, project_id, bucket_name, filename, skiprows=0):
     """

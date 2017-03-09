@@ -1,6 +1,9 @@
-import MySQLdb
 from argparse import ArgumentParser
-from utils.sql_connector import cloudsql_connector
+
+import MySQLdb
+
+from isb_cgc_user_data.utils.sql_connector import cloudsql_connector
+
 
 def user_metadata():
     return [

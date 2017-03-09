@@ -15,9 +15,11 @@
 """Convert results from BigQuery to a dataframe
 """
 
-from bigquery_etl.utils import sync_query
-import pandas as pd
 import numpy as np
+import pandas as pd
+
+from isb_cgc_user_data.bigquery_etl.utils import sync_query
+
 
 def run(project_id, query):
     """Runs a sync query and onverts the results to a dataframe

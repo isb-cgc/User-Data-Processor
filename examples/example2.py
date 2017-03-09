@@ -13,11 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-""" example tutorial script
-"""
-from bigquery_etl.utils import gcutils
-from bigquery_etl.extract.gcloud_wrapper import GcsConnector
-from bigquery_etl.load import load_data_from_file
+import pandas
+from isb_cgc_user_data.bigquery_etl.extract.gcloud_wrapper import GcsConnector
+from isb_cgc_user_data.bigquery_etl.transform.tools import cleanup_dataframe
+
+from isb_cgc_user_data.bigquery_etl.utils import gcutils
+
 
 # run python demo.py
 
@@ -29,13 +30,21 @@ def main():
     project_id = ''
     bucket_name = ''
     # example file in bucket
-    filename = ''
+    filename = 'TCGA-OR-A5J1-01A-11D-A29J-05.txt'
     outfilename = ''
+
+    # read the stringIO/file into a pandas dataframe
+    # load the file into a table
+    data_df = pandas.read_table(filename, sep="\t", skiprows=1,
+                                lineterminator='\n', comment='#')
+
+    # clean up the dataframe for upload to BigQuery
+    data_df = cleanup_dataframe(data_df)
 
     # connect to the google cloud bucket
     gcs = GcsConnector(project_id, bucket_name)
 
-     # main steps: download, convert to df
+    # main steps: download, convert to df
     data_df = gcutils.convert_blob_to_dataframe(gcs, project_id, bucket_name, filename, skiprows=1)
 
     #---------------------------------------------------------
@@ -43,7 +52,7 @@ def main():
     # get chromosome 1 and Genomic_Coordinate > 20000000
     #---------------------------------------------------------
     data_df = (data_df.query("Chromosome == '1' and Genomic_Coordinate > 20000000")\
-                 .query("Beta_value > 0.2"))
+                .query("Beta_value > 0.2"))
     # we can assign this query to a new dataframe and have new data
 
     # upload the contents of the dataframe in njson format to google storage
@@ -54,8 +63,8 @@ def main():
     print status
 
     # load the file from Google Storage to BigQuery
-    #load_data_from_file.run(project_id, bq_dataset, table_name, schema_file,
-    #                        file_location, 'NEWLINE_DELIMITED_JSON')
+    #load_data_from_file.run(project_id, bq_dataset, table_name,
+    #                         schema_file, file_location, 'NEWLINE_DELIMITED_JSON')
 
 
 if __name__ == '__main__':

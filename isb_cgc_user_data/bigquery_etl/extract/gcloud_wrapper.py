@@ -14,30 +14,23 @@
 # limitations under the License.
 
 # -*- coding: utf-8 -*-
-import re
-import json
-from gcloud import storage
-from collections import defaultdict
-import pandas as pd
-import numpy as np
-from StringIO import StringIO
-from os.path import basename
-import sys
-import time
 import logging
-import tempfile
-import chardet
-import traceback
-from retrying import retry
-from oauth2client.client import GoogleCredentials
 import os
+import tempfile
+import time
+from StringIO import StringIO
 from os.path import join, dirname
-from bigquery_etl.utils import dotenv
+
+import pandas as pd
+from gcloud import storage
+from retrying import retry
+
+from isb_cgc_user_data.bigquery_etl.utils import dotenv
 
 log = logging.getLogger(__name__)
-dotenv.read_dotenv(join(dirname(__file__), '../../.env'))
+dotenv.read_dotenv(join(dirname(__file__), '../../../.env'))
 
-PRIVATEKEY_PATH = join(dirname(__file__), '../../', os.environ.get('privatekey_path'))
+PRIVATEKEY_PATH = join(dirname(__file__), '../../../', os.environ.get('privatekey_path'))
 print PRIVATEKEY_PATH
 
 class GcsConnector(object):

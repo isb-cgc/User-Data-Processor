@@ -1,9 +1,11 @@
 import os
 from os.path import join, dirname
+
 import MySQLdb
+
 import dotenv
 
-dotenv.read_dotenv(join(dirname(__file__), '../.env'))
+dotenv.read_dotenv(join(dirname(__file__), '../../.env'))
 
 def cloudsql_connector():
     if os.environ.has_key('ssl_cert'):

@@ -16,14 +16,9 @@
 """Script to parse Protein files
 """
 
-from bigquery_etl.extract.gcloud_wrapper import GcsConnector
-from bigquery_etl.extract.utils import convert_file_to_dataframe
-from bigquery_etl.load import load_data_from_file
-from bigquery_etl.transform.tools import cleanup_dataframe
 import sys
-import pandas as pd
-from metadata_updates import update_metadata_data_list, update_molecular_metadata_samples_list, insert_feature_defs_list
-from bigquery_table_schemas import get_molecular_schema
+
+from metadata_updates import update_metadata_data_list
 
 
 def parse_file(project_id, bq_dataset, bucket_name, file_data, filename, outfilename, metadata, cloudsql_tables):
