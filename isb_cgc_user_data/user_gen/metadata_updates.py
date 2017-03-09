@@ -75,7 +75,7 @@ def update_metadata_data(table, metadata):
     db.commit()
     cursor.close()
     db.close()
-s
+
 '''
 Function to append data to a given metadata_data table.
 Takes in a list of metadata objects
