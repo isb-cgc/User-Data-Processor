@@ -17,6 +17,7 @@ import argparse
 import json
 import os
 
+import user_gen.user_gen_processing
 import user_gen.molecular_processing
 import user_gen.low_level_processing
 import user_gen.vcf_processing
