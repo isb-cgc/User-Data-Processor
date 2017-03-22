@@ -1,5 +1,4 @@
-pandas>0.16.0
-numpy
+oauth2client==3.0.0
 futures
 requests
 gcloud==0.8.0

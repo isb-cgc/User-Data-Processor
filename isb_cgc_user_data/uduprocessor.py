@@ -16,6 +16,7 @@
 import argparse
 import json
 import os
+import requests
 
 import user_gen.user_gen_processing
 import user_gen.molecular_processing
@@ -31,133 +32,136 @@ def generate_bq_schema(columns):
     return obj
 
 
-def process_upload(user_data_config):
-    print os.environ.get('SUCCESS_URL')
-    schemas_dir = os.path.join(os.getcwd(), 'schemas/')
-    configs = open(user_data_config).read()
-    data = json.loads(configs)
+def process_upload(user_data_config, success_url, failure_url):
+    try:
+        schemas_dir = os.path.join(os.getcwd(), 'schemas/')
+        configs = open(user_data_config).read()
+        data = json.loads(configs)
 
-    project_id = data['GOOGLE_PROJECT']
-    user_project = data['USER_PROJECT']
-    user_study = data['STUDY']
-    bucketname = data['BUCKET']
-    bq_dataset = data['BIGQUERY_DATASET']
-    cloudsql_tables = {
-        'METADATA_DATA': data['USER_METADATA_TABLES']['METADATA_DATA'],
-        'METADATA_SAMPLES': data['USER_METADATA_TABLES']['METADATA_SAMPLES'],
-        'FEATURE_DEFS': data['USER_METADATA_TABLES']['FEATURE_DEFS']
-    }
+        project_id = data['GOOGLE_PROJECT']
+        user_project = data['USER_PROJECT']
+        user_study = data['STUDY']
+        bucketname = data['BUCKET']
+        bq_dataset = data['BIGQUERY_DATASET']
+        cloudsql_tables = {
+            'METADATA_DATA': data['USER_METADATA_TABLES']['METADATA_DATA'],
+            'METADATA_SAMPLES': data['USER_METADATA_TABLES']['METADATA_SAMPLES'],
+            'FEATURE_DEFS': data['USER_METADATA_TABLES']['FEATURE_DEFS']
+        }
 
-    # Check for user_gen files and process them first
-    user_gen_list = []
-    mol_file_list = []
-    vcf_file_list = []
-    low_level_list = []
-    for file in data['FILES']:
-        if file['DATATYPE'] == 'user_gen':
-            user_gen_list.append(file)
-        elif file['DATATYPE'] == 'low_level':
-            low_level_list.append(file)
-        elif file['DATATYPE'] == 'vcf_file':
-            vcf_file_list.append(file)
-        else:
-            mol_file_list.append(file)
+        # Check for user_gen files and process them first
+        user_gen_list = []
+        mol_file_list = []
+        vcf_file_list = []
+        low_level_list = []
+        for file in data['FILES']:
+            if file['DATATYPE'] == 'user_gen':
+                user_gen_list.append(file)
+            elif file['DATATYPE'] == 'low_level':
+                low_level_list.append(file)
+            elif file['DATATYPE'] == 'vcf_file':
+                vcf_file_list.append(file)
+            else:
+                mol_file_list.append(file)
 
-    # TODO: Add processor for low level file listings
+        # TODO: Add processor for low level file listings
 
-    print 'Number of user_gen files: ', len(user_gen_list)
-    print 'Number of molecular files: ', len(mol_file_list)
-    print 'Number of low level files: ', len(low_level_list)
+        print 'Number of user_gen files: ', len(user_gen_list)
+        print 'Number of molecular files: ', len(mol_file_list)
+        print 'Number of low level files: ', len(low_level_list)
 
-    # Process all user_gen files together
-    if len(user_gen_list):
-        user_gen.user_gen_processing.process_user_gen_files(project_id,
-                                                            user_project,
-                                                            user_study,
-                                                            bucketname,
-                                                            bq_dataset,
-                                                            cloudsql_tables,
-                                                            user_gen_list)
+        # Process all user_gen files together
+        if len(user_gen_list):
+            user_gen.user_gen_processing.process_user_gen_files(project_id,
+                                                                user_project,
+                                                                user_study,
+                                                                bucketname,
+                                                                bq_dataset,
+                                                                cloudsql_tables,
+                                                                user_gen_list)
 
-    # Process all VCF Files
-    if len(vcf_file_list):
-        user_gen.vcf_processing.process_vcf_files(project_id,
-                                                  user_project,
-                                                  user_study,
-                                                  bucketname,
-                                                  bq_dataset,
-                                                  cloudsql_tables,
-                                                  vcf_file_list)
+        # Process all VCF Files
+        if len(vcf_file_list):
+            user_gen.vcf_processing.process_vcf_files(project_id,
+                                                      user_project,
+                                                      user_study,
+                                                      bucketname,
+                                                      bq_dataset,
+                                                      cloudsql_tables,
+                                                      vcf_file_list)
 
-    # Process all other datatype files
-    if len(mol_file_list):
-        for file in mol_file_list:
-            table_name = file['BIGQUERY_TABLE_NAME']
+        # Process all other datatype files
+        if len(mol_file_list):
+            for file in mol_file_list:
+                table_name = file['BIGQUERY_TABLE_NAME']
 
-            inputfilename = file['FILENAME']
-            blob_name = inputfilename.split('/')[1:] # Path without bucket. Assuming bucket name appended to front of file path.
-            outputfilename = '{0}.out'.format(inputfilename.split('/')[-1]) # Get the actual file name
-            bucket_name = inputfilename.split('/')[0] # Get the bucketname
+                inputfilename = file['FILENAME']
+                blob_name = inputfilename.split('/')[1:] # Path without bucket. Assuming bucket name appended to front of file path.
+                outputfilename = '{0}.out'.format(inputfilename.split('/')[-1]) # Get the actual file name
+                bucket_name = inputfilename.split('/')[0] # Get the bucketname
 
-            metadata = {
-                'sample_barcode': file.get('SAMPLEBARCODE', ''),
-                'participant_barcode': file.get('PARTICIPANTBARCODE', ''),
-                'project_id': user_project,
-                'study_id': user_study,
-                'platform': file.get('PLATFORM', ''),
-                'pipeline': file.get('PIPELINE', ''),
-            }
+                metadata = {
+                    'sample_barcode': file.get('SAMPLEBARCODE', ''),
+                    'participant_barcode': file.get('PARTICIPANTBARCODE', ''),
+                    'project_id': user_project,
+                    'study_id': user_study,
+                    'platform': file.get('PLATFORM', ''),
+                    'pipeline': file.get('PIPELINE', ''),
+                }
 
-            # Update metadata_data table in cloudSQL
-            metadata['file_path'] = inputfilename
-            metadata['file_name'] = inputfilename.split('/')[-1]
-            metadata['data_type'] = file['DATATYPE']
+                # Update metadata_data table in cloudSQL
+                metadata['file_path'] = inputfilename
+                metadata['file_name'] = inputfilename.split('/')[-1]
+                metadata['data_type'] = file['DATATYPE']
 
-            # Transform and load metadata
-            user_gen.molecular_processing.parse_file(project_id,
-                                                     bq_dataset,
-                                                     bucket_name,
-                                                     file,
-                                                     blob_name,
-                                                     outputfilename,
-                                                     metadata,
-                                                     cloudsql_tables
-                                                    )
+                # Transform and load metadata
+                user_gen.molecular_processing.parse_file(project_id,
+                                                         bq_dataset,
+                                                         bucket_name,
+                                                         file,
+                                                         blob_name,
+                                                         outputfilename,
+                                                         metadata,
+                                                         cloudsql_tables
+                                                        )
 
-    if len(low_level_list):
-        for file in low_level_list:
-            table_name = file['BIGQUERY_TABLE_NAME']
+        if len(low_level_list):
+            for file in low_level_list:
+                table_name = file['BIGQUERY_TABLE_NAME']
 
-            inputfilename = file['FILENAME']
-            blob_name = inputfilename.split('/')[
-                        1:]  # Path without bucket. Assuming bucket name appended to front of file path.
-            outputfilename = '{0}.out'.format(inputfilename.split('/')[-1])  # Get the actual file name
-            bucket_name = inputfilename.split('/')[0]  # Get the bucketname
+                inputfilename = file['FILENAME']
+                blob_name = inputfilename.split('/')[
+                            1:]  # Path without bucket. Assuming bucket name appended to front of file path.
+                outputfilename = '{0}.out'.format(inputfilename.split('/')[-1])  # Get the actual file name
+                bucket_name = inputfilename.split('/')[0]  # Get the bucketname
 
-            metadata = {
-                'sample_barcode': file.get('SAMPLEBARCODE', ''),
-                'participant_barcode': file.get('PARTICIPANTBARCODE', ''),
-                'project_id': user_project,
-                'study_id': user_study,
-                'platform': file.get('PLATFORM', ''),
-                'pipeline': file.get('PIPELINE', ''),
-            }
+                metadata = {
+                    'sample_barcode': file.get('SAMPLEBARCODE', ''),
+                    'participant_barcode': file.get('PARTICIPANTBARCODE', ''),
+                    'project_id': user_project,
+                    'study_id': user_study,
+                    'platform': file.get('PLATFORM', ''),
+                    'pipeline': file.get('PIPELINE', ''),
+                }
 
-            # Update metadata_data table in cloudSQL
-            metadata['file_path'] = inputfilename
-            metadata['file_name'] = inputfilename.split('/')[-1]
-            metadata['data_type'] = file['DATATYPE']
+                # Update metadata_data table in cloudSQL
+                metadata['file_path'] = inputfilename
+                metadata['file_name'] = inputfilename.split('/')[-1]
+                metadata['data_type'] = file['DATATYPE']
 
-            # Transform and load metadata
-            user_gen.low_level_processing.parse_file(project_id,
-                                                     bq_dataset,
-                                                     bucket_name,
-                                                     file,
-                                                     blob_name,
-                                                     outputfilename,
-                                                     metadata,
-                                                     cloudsql_tables
-                                                    )
+                # Transform and load metadata
+                user_gen.low_level_processing.parse_file(project_id,
+                                                         bq_dataset,
+                                                         bucket_name,
+                                                         file,
+                                                         blob_name,
+                                                         outputfilename,
+                                                         metadata,
+                                                         cloudsql_tables
+                                                        )
+        requests.get(success_url)
+    except:
+        requests.get(failure_url)
 
 
 if __name__ == '__main__':
