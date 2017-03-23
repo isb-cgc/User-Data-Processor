@@ -51,7 +51,8 @@ def process_user_gen_files(project_id, user_project_id, study_id, bucket_name, b
         metadata = {
             'sample_barcode': file.get('SAMPLEBARCODE', ''),
             'participant_barcode': file.get('PARTICIPANTBARCODE', ''),
-            'study_id': study_id,
+           # 'study_id': study_id,
+            'project_id': study_id,
             'platform': file.get('PLATFORM', ''),
             'pipeline': file.get('PIPELINE', ''),
             'file_path': file['FILENAME'],

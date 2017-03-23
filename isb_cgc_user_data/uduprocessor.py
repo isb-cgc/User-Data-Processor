@@ -17,6 +17,8 @@ import argparse
 import json
 import os
 import requests
+import traceback
+import sys
 
 import user_gen.user_gen_processing
 import user_gen.molecular_processing
@@ -103,8 +105,8 @@ def process_upload(user_data_config, success_url, failure_url):
                 metadata = {
                     'sample_barcode': file.get('SAMPLEBARCODE', ''),
                     'participant_barcode': file.get('PARTICIPANTBARCODE', ''),
-                    'project_id': user_project,
-                    'study_id': user_study,
+                    'project_id': user_study,
+                #    'study_id': user_study,
                     'platform': file.get('PLATFORM', ''),
                     'pipeline': file.get('PIPELINE', ''),
                 }
@@ -138,8 +140,8 @@ def process_upload(user_data_config, success_url, failure_url):
                 metadata = {
                     'sample_barcode': file.get('SAMPLEBARCODE', ''),
                     'participant_barcode': file.get('PARTICIPANTBARCODE', ''),
-                    'project_id': user_project,
-                    'study_id': user_study,
+                    'project_id': user_study,
+                 #   'study_id': user_study,
                     'platform': file.get('PLATFORM', ''),
                     'pipeline': file.get('PIPELINE', ''),
                 }
@@ -161,6 +163,7 @@ def process_upload(user_data_config, success_url, failure_url):
                                                         )
         requests.get(success_url)
     except:
+        traceback.print_exc(file=sys.stdout)
         requests.get(failure_url)
 
 

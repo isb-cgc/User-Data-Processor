@@ -65,7 +65,7 @@ def parse_file(project_id, bq_dataset, bucket_name, file_data, filename, outfile
 
                 new_df_obj['sample_barcode'] = i # Normalized to match user_gen
                 new_df_obj['project_id'] = metadata['project_id']
-                new_df_obj['study_id'] = metadata['study_id']
+             #   new_df_obj['study_id'] = metadata['study_id']
                 new_df_obj['Platform'] = metadata['platform']
                 new_df_obj['Pipeline'] = metadata['pipeline']
 
