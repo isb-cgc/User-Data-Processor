@@ -4,8 +4,8 @@ def get_molecular_schema():
          'type': 'STRING'},
         {'name': 'project_id',
          'type': 'INTEGER'},
-        {'name': 'study_id',
-         'type': 'INTEGER'},
+     #   {'name': 'study_id',
+     #    'type': 'INTEGER'},
         {'name': 'Platform',
          'type': 'STRING'},
         {'name': 'Pipeline',
@@ -26,7 +26,7 @@ def get_user_gen_schema():
         {'name': 'sample_barcode',
          'type': 'STRING'},
         {'name': 'project_id',
-         'type': 'INTEGER'},
-        {'name': 'study_id',
+      #   'type': 'INTEGER'},
+       # {'name': 'study_id',
          'type': 'INTEGER'}
     ]

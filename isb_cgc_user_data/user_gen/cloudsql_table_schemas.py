@@ -8,7 +8,7 @@ from isb_cgc_user_data.utils.sql_connector import cloudsql_connector
 def user_metadata():
     return [
 
-        {'column_name': 'study_id',
+        {'column_name': 'project_id',
          'type': 'INTEGER'},
         {'column_name': 'sample_barcode',
          'type': 'VARCHAR(200)'},
@@ -42,7 +42,7 @@ def user_metadata_sample():
 
 def user_feature_def():
     return [
-        {'column_name': 'study_id',
+        {'column_name': 'project_id',
          'type': 'INTEGER'},
         {'column_name': 'feature_name',
          'type': 'VARCHAR(200)'},
