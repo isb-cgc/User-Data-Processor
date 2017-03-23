@@ -92,7 +92,7 @@ def parse_file(project_id, bq_dataset, bucket_name, file_data, filename, outfile
 
     # Generate feature names and bq_mappings
     table_name = file_data['BIGQUERY_TABLE_NAME']
-    feature_defs = generate_feature_Defs(metadata['data_type'], metadata['study_id'], project_id, bq_dataset, table_name, new_df)
+    feature_defs = generate_feature_Defs(metadata['data_type'], metadata['project_id'], project_id, bq_dataset, table_name, new_df)
 
     # Update feature_defs table
     insert_feature_defs_list(cloudsql_tables['FEATURE_DEFS'], feature_defs)
