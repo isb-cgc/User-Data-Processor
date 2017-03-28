@@ -5,7 +5,7 @@ import os
 from flask import Flask, request, jsonify, abort, make_response
 from flask_basicauth import BasicAuth
 from werkzeug.utils import secure_filename
-from google.cloud import datastore, pubsub
+from google.cloud import datastore, pubsub, logging
 import datetime
 import tasks_for_psq
 import psq
@@ -51,6 +51,7 @@ PROJECT_ID = my_config['UDU_PSQ_PROJECT_ID']
 UPLOAD_FOLDER = my_config['UDU_UPLOAD_FOLDER']
 RESPONSE_LOCATION_PREFIX = my_config['UDU_RESPONSE_LOCATION']
 PING_COUNT = int(my_config['UDU_PING_COUNT'])
+STACKDRIVER_LOG = my_config['UDU_STACKDRIVER_LOG']
 
 # FLASK
 app = Flask(__name__)
@@ -63,6 +64,11 @@ basic_auth = BasicAuth(app)
 pubsub_client = pubsub.Client(project=PROJECT_ID)
 #datastore_client = datastore.Client(project=PROJECT_ID)
 q = psq.Queue(pubsub_client) #, storage = psq.DatastoreStorage(datastore_client))
+
+# STACKDRIVER LOGGING
+
+logging_client = logging.Client()
+logger = logging_client.logger(STACKDRIVER_LOG)
 
 #
 # This is the guts of the server. Takes UDU job requests and queues them up
@@ -77,18 +83,21 @@ def run_udu_job():
         #
         # Extract the needed URLs and do sanity checking:
         #
-
+        logger.log_text('request issued to user data upload server', severity='INFO')
         success_url = request.args.get('SUCCESS_POST_URL')
         failure_url = request.args.get('FAILURE_POST_URL')
         if (not (success_url and success_url.strip()) or
             not (failure_url and failure_url.strip())):
+            logger.log_text('Inbound request was missing response URLs', severity='WARNING')
             print 'missing URLs'
             return abort(400)
         if 'config.json' not in request.files:
+            logger.log_text('Inbound request was missing config.json', severity='WARNING')
             print 'missing config.json'
             return abort(400)
         my_file = request.files['config.json']
         if not (my_file.filename and my_file.filename.strip()):
+            logger.log_text('Inbound request had empty filename', severity='WARNING')
             print 'empty filename'
             return abort(400)
 
@@ -104,21 +113,27 @@ def run_udu_job():
         # this by creating a pile of no-op calls before and after to flush the message
         # queue:
         #
+            logger.log_text('pub/sub stuffing with preamble pings', severity='INFO')
             for _ in xrange(10):
                 q.enqueue(tasks_for_psq.ping_the_pipe)
 
+            logger.log_text('pub/sub issuing processing request', severity='INFO')
             q.enqueue(tasks_for_psq.processUserData, my_file_name, success_url, failure_url)
 
+            logger.log_text('pub/sub stuffing with postscript pings', severity='INFO')
             for _ in xrange(10):
                 q.enqueue(tasks_for_psq.ping_the_pipe)
 
             resp = make_response(jsonify("processing"))
             resp.headers['Location'] = RESPONSE_LOCATION_PREFIX + my_file_name
+            logger.log_text('response issued to caller', severity='INFO')
             return resp
         else:
+            logger.log_text('Unexpected filename', severity='WARNING')
             print 'unexpected filename'
             return abort(400)
     else:
+        logger.log_text('Unexpected transport', severity='WARNING')
         print 'unexpected transport'
         return abort(400)
 
