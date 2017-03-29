@@ -2,6 +2,7 @@
 
 import ssl
 import os
+import sys
 from flask import Flask, request, jsonify, abort, make_response
 from flask_basicauth import BasicAuth
 from werkzeug.utils import secure_filename
@@ -69,7 +70,7 @@ q = psq.Queue(pubsub_client) #, storage = psq.DatastoreStorage(datastore_client)
 
 logging_client = logging.Client()
 logger = logging_client.logger(STACKDRIVER_LOG)
-print 'using this log: ' + STACKDRIVER_LOG;
+print >> sys.stderr, 'using this log: ' + STACKDRIVER_LOG;
 
 #
 # This is the guts of the server. Takes UDU job requests and queues them up
