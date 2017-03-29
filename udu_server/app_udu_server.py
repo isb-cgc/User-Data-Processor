@@ -2,7 +2,6 @@
 
 import ssl
 import os
-import sys
 from flask import Flask, request, jsonify, abort, make_response
 from flask_basicauth import BasicAuth
 from werkzeug.utils import secure_filename
@@ -70,7 +69,6 @@ q = psq.Queue(pubsub_client) #, storage = psq.DatastoreStorage(datastore_client)
 
 logging_client = logging.Client()
 logger = logging_client.logger(STACKDRIVER_LOG)
-print >> sys.stderr, 'using this log: ' + STACKDRIVER_LOG;
 
 #
 # This is the guts of the server. Takes UDU job requests and queues them up
@@ -91,7 +89,6 @@ def run_udu_job():
         failure_url = request.args.get('FAILURE_POST_URL')
         if (not (success_url and success_url.strip()) or
             not (failure_url and failure_url.strip())):
-            print >> sys.stderr, 'tryng to use this log: ' + STACKDRIVER_LOG;
             logger.log_text('Inbound request was missing response URLs', severity='WARNING')
             print 'missing URLs'
             return abort(400)
@@ -158,4 +155,5 @@ def pinger():
 if __name__ == '__main__':
     context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
     context.load_cert_chain('flask-server.crt', 'flask-server.key')
+    logger.log_text('Starting up Flask Server', severity='INFO')
     app.run(host='0.0.0.0', debug=True, ssl_context=context)
