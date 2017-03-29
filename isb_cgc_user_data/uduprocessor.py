@@ -24,7 +24,15 @@ import user_gen.user_gen_processing
 import user_gen.molecular_processing
 import user_gen.low_level_processing
 import user_gen.vcf_processing
+from google.cloud import logging
 
+# FIX ME! Get this from config file
+STACKDRIVER_LOG = 'udu_dev'
+
+# STACKDRIVER LOGGING
+
+logging_client = logging.Client()
+logger = logging_client.logger(STACKDRIVER_LOG)
 
 def generate_bq_schema(columns):
     obj = []
@@ -36,6 +44,7 @@ def generate_bq_schema(columns):
 
 def process_upload(user_data_config, success_url, failure_url):
     try:
+        logger.log_text('uduprocessor handling request', severity='INFO')
         schemas_dir = os.path.join(os.getcwd(), 'schemas/')
         configs = open(user_data_config).read()
         data = json.loads(configs)
@@ -161,8 +170,10 @@ def process_upload(user_data_config, success_url, failure_url):
                                                          metadata,
                                                          cloudsql_tables
                                                         )
+        logger.log_text('uduprocessor registering success', severity='INFO')
         requests.get(success_url)
     except:
+        logger.log_text('uduprocessor registering failure', severity='WARNING')
         traceback.print_exc(file=sys.stdout)
         requests.get(failure_url)
 
