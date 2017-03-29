@@ -44,7 +44,9 @@ def generate_bq_schema(columns):
 
 def process_upload(user_data_config, success_url, failure_url):
     try:
+        print 'trying to log to : ' + STACKDRIVER_LOG
         logger.log_text('uduprocessor handling request', severity='INFO')
+        print 'tried to log to : ' + STACKDRIVER_LOG
         schemas_dir = os.path.join(os.getcwd(), 'schemas/')
         configs = open(user_data_config).read()
         data = json.loads(configs)
@@ -170,6 +172,7 @@ def process_upload(user_data_config, success_url, failure_url):
                                                          metadata,
                                                          cloudsql_tables
                                                         )
+        print 'trying to log success to : ' + STACKDRIVER_LOG
         logger.log_text('uduprocessor registering success', severity='INFO')
         requests.get(success_url)
     except:
