@@ -9,6 +9,7 @@ from google.cloud import datastore, pubsub, logging
 import datetime
 import tasks_for_psq
 import psq
+import sys
 
 #
 # Make sure we come up with a unique name, though clearly if this was handling
@@ -83,7 +84,7 @@ def run_udu_job():
         #
         # Extract the needed URLs and do sanity checking:
         #
-
+        print >> sys.stderr, "Logging to " + STACKDRIVER_LOG
         logger.log_text('request issued to user data upload server', severity='INFO')
         success_url = request.args.get('SUCCESS_POST_URL')
         failure_url = request.args.get('FAILURE_POST_URL')
@@ -156,4 +157,4 @@ if __name__ == '__main__':
     context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
     context.load_cert_chain('flask-server.crt', 'flask-server.key')
     logger.log_text('Starting up Flask Server', severity='INFO')
-    app.run(host='0.0.0.0', debug=True, ssl_context=context)
+    app.run(host='0.0.0.0', ssl_context=context)
