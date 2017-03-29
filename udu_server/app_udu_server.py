@@ -91,6 +91,7 @@ def run_udu_job():
         failure_url = request.args.get('FAILURE_POST_URL')
         if (not (success_url and success_url.strip()) or
             not (failure_url and failure_url.strip())):
+            print >> sys.stderr, 'tryng to use this log: ' + STACKDRIVER_LOG;
             logger.log_text('Inbound request was missing response URLs', severity='WARNING')
             print 'missing URLs'
             return abort(400)
