@@ -18,9 +18,9 @@
 
 UDU_HOME=/var/local/udu
 
-cd $UDU_HOME/User-Data-Processor
+cd $UDU_HOME/User-Data-Processor/udu_server
 
-export GOOGLE_APPLICATION_CREDENTIALS=$UDU_HOME/credentials/pubSubServiceAcct.json
+export GOOGLE_APPLICATION_CREDENTIALS=$UDU_HOME/User-Data-Processor/credentials/pubSubServiceAcct.json
 export PYTHONPATH=$UDU_HOME/User-Data-Processor
 
 # starts up Flask server

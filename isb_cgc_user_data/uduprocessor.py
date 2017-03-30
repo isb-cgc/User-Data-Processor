@@ -174,7 +174,7 @@ def process_upload(user_data_config, success_url, failure_url):
         requests.get(success_url)
     except:
         logger.log_text('uduprocessor registering failure', severity='WARNING')
-        traceback.print_exc(file=sys.stdout)
+        traceback.print_exc(file=sys.stderr)
         requests.get(failure_url)
 
 

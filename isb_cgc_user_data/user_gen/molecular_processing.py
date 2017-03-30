@@ -34,7 +34,7 @@ dotenv.read_dotenv(join(dirname(__file__), '../../.env'))
 
 def parse_file(project_id, bq_dataset, bucket_name, file_data, filename, outfilename, metadata, cloudsql_tables):
 
-    print 'Begin processing {0}.'.format(filename)
+    print >> sys.stderr, 'Begin processing {0}.'.format(filename)
 
     # connect to the cloud bucket
     gcs = GcsConnector(project_id, bucket_name)
@@ -117,7 +117,7 @@ def parse_file(project_id, bq_dataset, bucket_name, file_data, filename, outfile
         is_schema_file=False)
 
     # Delete temporary files
-    print 'Deleting temporary file {0}'.format(outfilename)
+    print >> sys.stderr,  'Deleting temporary file {0}'.format(outfilename)
     gcs = GcsConnector(project_id, tmp_bucket)
     gcs.delete_blob(outfilename)
 

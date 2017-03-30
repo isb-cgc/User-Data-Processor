@@ -19,9 +19,9 @@
 UDU_HOME=/var/local/udu
 PYTH_DIST=/usr/local/lib/python2.7/dist-packages
 
-cd $UDU_HOME/User-Data-Processor
+cd $UDU_HOME/User-Data-Processor/udu_server
 
-export GOOGLE_APPLICATION_CREDENTIALS=$UDU_HOME/credentials/pubSubServiceAcct.json
+export GOOGLE_APPLICATION_CREDENTIALS=$UDU_HOME/User-Data-Processor/credentials/pubSubServiceAcct.json
 export PYTHONPATH=$UDU_HOME/User-Data-Processor
 
 # This has to be run in the directory with tasks_for_psq.py.
