@@ -1,10 +1,23 @@
 #!/usr/bin/env python
 
+# Copyright 2017, Institute for Systems Biology
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import ssl
 import os
 from flask import Flask, request, jsonify, abort, make_response
 from flask_basicauth import BasicAuth
-from werkzeug.utils import secure_filename
 from google.cloud import datastore, pubsub, logging
 import datetime
 import tasks_for_psq
@@ -45,8 +58,8 @@ def read_dict(my_file_name):
 # with using Basic Authentication
 #
 
-my_secrets = read_dict('udu_secrets.txt')
-my_config = read_dict('udu_config.txt')
+my_secrets = read_dict('../config/udu_secrets.txt')
+my_config = read_dict('../config/udu_config.txt')
 
 PROJECT_ID = my_config['UDU_PSQ_PROJECT_ID']
 UPLOAD_FOLDER = my_config['UDU_UPLOAD_FOLDER']
@@ -155,6 +168,6 @@ def pinger():
 
 if __name__ == '__main__':
     context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
-    context.load_cert_chain('flask-server.crt', 'flask-server.key')
+    context.load_cert_chain('../config/flask-server.crt', '../config/flask-server.key')
     logger.log_text('Starting up the UDU server', severity='INFO')
     app.run(host='0.0.0.0', debug=False, ssl_context=context)

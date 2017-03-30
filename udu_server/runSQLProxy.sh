@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 
 # Copyright 2017, Institute for Systems Biology
 #
@@ -13,12 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import isb_cgc_user_data.uduprocessor
+UDU_HOME=/var/local/udu
 
-def processUserData(user_data_config, success_url, failure_url):
-    isb_cgc_user_data.uduprocessor.process_upload(user_data_config, success_url, failure_url)
-    return "Success"
+source $UDU_HOME/config/startupConfig.sh
 
-def ping_the_pipe():
-    print ("Pipe pinged")
-    return "Success"
+./cloud_sql_proxy -credential_file sqlServiceAcct.json -instances=${SQL_INSTANCE}=tcp:3306

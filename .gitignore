@@ -13,3 +13,5 @@ client_secrets.json
 privatekey.json
 *.pem
 .DS_STORE
+credentials/*
+!credentials/README.md
