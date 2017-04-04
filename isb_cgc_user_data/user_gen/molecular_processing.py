@@ -32,21 +32,24 @@ from metadata_updates import update_metadata_data_list, update_molecular_metadat
 
 dotenv.read_dotenv(join(dirname(__file__), '../../.env'))
 
-def parse_file(project_id, bq_dataset, bucket_name, file_data, filename, outfilename, metadata, cloudsql_tables):
-
-    print >> sys.stderr, 'Begin processing {0}.'.format(filename)
+def parse_file(project_id, bq_dataset, bucket_name, file_data, filename, outfilename, metadata, cloudsql_tables, logger):
+    logger.log_text('uduprocessor: Begin molecular processing {0}'.format(filename), severity='INFO')
 
     # connect to the cloud bucket
     gcs = GcsConnector(project_id, bucket_name)
+    logger.log_text('uduprocessor: GcsConnector Success', severity='INFO')
 
     #main steps: download, convert to df, cleanup, transform, add metadata
     filebuffer = gcs.download_blob_to_file(filename)
+    logger.log_text('uduprocessor: download_blob_to_file success', severity='INFO')
 
     # convert blob into dataframe
     data_df = convert_file_to_dataframe(filebuffer, skiprows=0, header=0)
+    logger.log_text('uduprocessor: convert_file_to_dataframe success', severity='INFO')
 
     # clean-up dataframe
     data_df = cleanup_dataframe(data_df)
+    logger.log_text('uduprocessor: cleanup_dataframe success', severity='INFO')
     new_df_data = []
 
     map_values = {}
@@ -76,6 +79,7 @@ def parse_file(project_id, bq_dataset, bucket_name, file_data, filename, outfile
                 new_df_obj['Level'] = m
                 new_df_data.append(new_df_obj)
     new_df = pd.DataFrame(new_df_data)
+    logger.log_text('uduprocessor: new dataframe constructed success', severity='INFO')
 
     # Get unique barcodes and update metadata_data table
     sample_barcodes = list(set([k for d, k in new_df['sample_barcode'].iteritems()]))
@@ -85,21 +89,26 @@ def parse_file(project_id, bq_dataset, bucket_name, file_data, filename, outfile
         new_metadata['sample_barcode'] = barcode
         sample_metadata_list.append(new_metadata)
     update_metadata_data_list(cloudsql_tables['METADATA_DATA'], sample_metadata_list)
+    logger.log_text('uduprocessor: update_metadata_data_list success', severity='INFO')
 
     # Update metadata_samples table
     update_molecular_metadata_samples_list(cloudsql_tables['METADATA_SAMPLES'], metadata['data_type'], sample_barcodes)
     update_metadata_participants(cloudsql_tables['METADATA_SAMPLES'])
+    logger.log_text('uduprocessor: Update metadata_samples table success', severity='INFO')
 
     # Generate feature names and bq_mappings
     table_name = file_data['BIGQUERY_TABLE_NAME']
     feature_defs = generate_feature_Defs(metadata['data_type'], metadata['project_id'], project_id, bq_dataset, table_name, new_df)
+    logger.log_text('uduprocessor: generate_feature_Defs success', severity='INFO')
 
     # Update feature_defs table
     insert_feature_defs_list(cloudsql_tables['FEATURE_DEFS'], feature_defs)
+    logger.log_text('uduprocessor: insert_feature_defs_list success', severity='INFO')
 
     # upload the contents of the dataframe in njson format
     tmp_bucket = os.environ.get('tmp_bucket')
     gcs.convert_df_to_njson_and_upload(new_df, outfilename, metadata=metadata, tmp_bucket=tmp_bucket)
+    logger.log_text('uduprocessor: convert_df_to_njson_and_upload success', severity='INFO')
 
     # Load into BigQuery
     # Using temporary file location (in case we don't have write permissions on user's bucket?)
@@ -115,11 +124,14 @@ def parse_file(project_id, bq_dataset, bucket_name, file_data, filename, outfile
         source_format='NEWLINE_DELIMITED_JSON',
         write_disposition='WRITE_APPEND',
         is_schema_file=False)
+    logger.log_text('uduprocessor: load_data_from_file.run success', severity='INFO')
 
     # Delete temporary files
-    print >> sys.stderr,  'Deleting temporary file {0}'.format(outfilename)
+    logger.log_text('uduprocessor: Deleting temporary file {0}'.format(outfilename), severity='INFO')
+
     gcs = GcsConnector(project_id, tmp_bucket)
     gcs.delete_blob(outfilename)
+    logger.log_text('uduprocessor: Deleting temporary file {0}'.format(outfilename), severity='INFO')
 
 def get_column_mapping(datatype):
     column_map = {

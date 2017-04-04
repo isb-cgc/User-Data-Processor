@@ -48,6 +48,7 @@ def process_upload(user_data_config, success_url, failure_url):
         schemas_dir = os.path.join(os.getcwd(), 'schemas/')
         configs = open(user_data_config).read()
         data = json.loads(configs)
+        logger.log_text('uduprocessor config loaded', severity='INFO')
 
         project_id = data['GOOGLE_PROJECT']
         user_project = data['USER_PROJECT']
@@ -77,12 +78,14 @@ def process_upload(user_data_config, success_url, failure_url):
 
         # TODO: Add processor for low level file listings
 
-        print 'Number of user_gen files: ', len(user_gen_list)
-        print 'Number of molecular files: ', len(mol_file_list)
-        print 'Number of low level files: ', len(low_level_list)
+        logger.log_text('uduprocessor: Number of user_gen files: {0}'.format(len(user_gen_list), severity='INFO'))
+        logger.log_text('uduprocessor: Number of vcf files: {0}'.format(len(vcf_file_list), severity='INFO'))
+        logger.log_text('uduprocessor: Number of molecular files: {0}'.format(len(mol_file_list), severity='INFO'))
+        logger.log_text('uduprocessor: Number of low level files: {0}'.format(len(low_level_list), severity='INFO'))
 
         # Process all user_gen files together
         if len(user_gen_list):
+            logger.log_text('uduprocessor: Processing user_gen', severity='INFO')
             user_gen.user_gen_processing.process_user_gen_files(project_id,
                                                                 user_project,
                                                                 user_study,
@@ -90,9 +93,11 @@ def process_upload(user_data_config, success_url, failure_url):
                                                                 bq_dataset,
                                                                 cloudsql_tables,
                                                                 user_gen_list)
+            logger.log_text('uduprocessor: Processed user_gen', severity='INFO')
 
         # Process all VCF Files
         if len(vcf_file_list):
+            logger.log_text('uduprocessor: Processing vcf', severity='INFO')
             user_gen.vcf_processing.process_vcf_files(project_id,
                                                       user_project,
                                                       user_study,
@@ -100,14 +105,17 @@ def process_upload(user_data_config, success_url, failure_url):
                                                       bq_dataset,
                                                       cloudsql_tables,
                                                       vcf_file_list)
+            logger.log_text('uduprocessor: Processed vcf', severity='INFO')
 
         # Process all other datatype files
         if len(mol_file_list):
+            logger.log_text('uduprocessor: Processing molecular', severity='INFO')
             for file in mol_file_list:
                 table_name = file['BIGQUERY_TABLE_NAME']
-
                 inputfilename = file['FILENAME']
+
                 blob_name = inputfilename.split('/')[1:] # Path without bucket. Assuming bucket name appended to front of file path.
+                logger.log_text('uduprocessor: Processing molecular {0}'.format(blob_name), severity='INFO')
                 outputfilename = '{0}.out'.format(inputfilename.split('/')[-1]) # Get the actual file name
                 bucket_name = inputfilename.split('/')[0] # Get the bucketname
 
@@ -133,16 +141,21 @@ def process_upload(user_data_config, success_url, failure_url):
                                                          blob_name,
                                                          outputfilename,
                                                          metadata,
-                                                         cloudsql_tables
+                                                         cloudsql_tables,
+                                                         logger
                                                         )
+                logger.log_text('uduprocessor: Processed molecular {0}'.format(blob_name), severity='INFO')
+            logger.log_text('uduprocessor: Processed molecular', severity='INFO')
 
         if len(low_level_list):
+            logger.log_text('uduprocessor: Processing low-level', severity='INFO')
             for file in low_level_list:
                 table_name = file['BIGQUERY_TABLE_NAME']
 
                 inputfilename = file['FILENAME']
                 blob_name = inputfilename.split('/')[
                             1:]  # Path without bucket. Assuming bucket name appended to front of file path.
+                logger.log_text('uduprocessor: Processing low-level {0}'.format(blob_name), severity='INFO')
                 outputfilename = '{0}.out'.format(inputfilename.split('/')[-1])  # Get the actual file name
                 bucket_name = inputfilename.split('/')[0]  # Get the bucketname
 
@@ -170,11 +183,13 @@ def process_upload(user_data_config, success_url, failure_url):
                                                          metadata,
                                                          cloudsql_tables
                                                         )
+                logger.log_text('uduprocessor: Processed low-level {0}'.format(blob_name), severity='INFO')
+            logger.log_text('uduprocessor: Processed low-level', severity='INFO')
         logger.log_text('uduprocessor registering success', severity='INFO')
         requests.get(success_url)
     except:
-        logger.log_text('uduprocessor registering failure', severity='WARNING')
-        traceback.print_exc(file=sys.stderr)
+        logger.log_text('uduprocessor registering failure', severity='ERROR')
+        logger.log_text(traceback.format_exc());
         requests.get(failure_url)
 
 
