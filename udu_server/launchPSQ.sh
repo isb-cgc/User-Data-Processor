@@ -26,4 +26,4 @@ export PYTHONPATH=$UDU_HOME/User-Data-Processor
 
 # This has to be run in the directory with tasks_for_psq.py.
 
-python $PYTH_DIST/psq/psqworker.py app_udu_server.q
+exec python $PYTH_DIST/psq/psqworker.py app_udu_server.q

@@ -20,4 +20,4 @@ cd $UDU_HOME/User-Data-Processor/udu_server
 
 source $UDU_HOME/User-Data-Processor/config/startupConfig.sh
 
-./cloud_sql_proxy -credential_file $UDU_HOME/User-Data-Processor/credentials/sqlServiceAcct.json -instances=${SQL_INSTANCE}=tcp:3306
+exec ./cloud_sql_proxy -credential_file $UDU_HOME/User-Data-Processor/credentials/sqlServiceAcct.json -instances=${SQL_INSTANCE}=tcp:3306

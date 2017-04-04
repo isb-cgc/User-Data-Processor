@@ -46,9 +46,11 @@ def process_upload(user_data_config, success_url, failure_url):
     try:
         logger.log_text('uduprocessor handling request', severity='INFO')
         schemas_dir = os.path.join(os.getcwd(), 'schemas/')
+        logger.log_text('uduprocessor: schemas_dir: {0}'.format(schemas_dir), severity='INFO')
         configs = open(user_data_config).read()
+        logger.log_text('uduprocessor: configs: {0}'.format(user_data_config), severity='INFO')
         data = json.loads(configs)
-        logger.log_text('uduprocessor config loaded', severity='INFO')
+        logger.log_text('uduprocessor: data: {0}'.format(data), severity='INFO')
 
         project_id = data['GOOGLE_PROJECT']
         user_project = data['USER_PROJECT']

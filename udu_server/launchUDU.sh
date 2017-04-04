@@ -25,4 +25,4 @@ export PYTHONPATH=$UDU_HOME/User-Data-Processor
 
 # starts up Flask server
 
-./app_udu_server.py
+exec ./app_udu_server.py
