@@ -105,6 +105,7 @@ def parse_file(project_id, bq_dataset, bucket_name, file_data, filename, outfile
     schema = get_molecular_schema()
 
     load_data_from_file.run(
+        config,
         project_id,
         bq_dataset,
         table_name,

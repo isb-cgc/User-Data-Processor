@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
 # Copyright 2015, Google, Inc.
+# Additional code Copyright 2017, Institute for Systems Biology.
+
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -29,9 +31,11 @@ For more information, see the README.md under /bigquery.
 import argparse
 import json
 import pandas as pd
+import os
 from googleapiclient import discovery
 from oauth2client.client import GoogleCredentials
 import numpy as np
+from isb_cgc_user_data.utils import build_config
 
 def sync_query(bigquery, project_id, query, timeout=10000, num_retries=5):
     print ('Running query "%s"' % (query,))
@@ -44,9 +48,14 @@ def sync_query(bigquery, project_id, query, timeout=10000, num_retries=5):
         body=query_data).execute(num_retries=num_retries)
 
 
-def main(project_id, query, timeout, num_retries):
+def main(config, project_id, query, timeout, num_retries):
+
+    current_cred = os.environ['GOOGLE_APPLICATION_CREDENTIALS']
+    new_cred = config['privatekey_path']
+    os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = new_cred
     # Grab the application's default credentials from the environment.
     credentials = GoogleCredentials.get_application_default()
+    os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = current_cred
 
     # Construct the service object for interacting with the BigQuery API.
     bigquery = discovery.build('bigquery', 'v2', credentials=credentials)
@@ -108,7 +117,10 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
+    config = build_config('config.txt')
+
     results = main(
+        config,
         args.project_id,
         args.query,
         args.timeout,

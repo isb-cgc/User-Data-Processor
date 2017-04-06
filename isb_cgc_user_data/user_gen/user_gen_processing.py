@@ -107,6 +107,7 @@ def process_user_gen_files(project_id, user_project_id, study_id, bucket_name, b
     schema = generate_bq_schema(all_columns)
     table_name = 'cgc_user_{0}_{1}'.format(user_project_id, study_id)
     load_data_from_file.run(
+        config,
         project_id,
         bq_dataset,
         table_name,
