@@ -28,12 +28,21 @@ class GcsConnector(object):
     """
     def __init__(self, project, bucket_name, config, tempdir='/tmp', logger=None):
         # connect to the cloud bucket
-        os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = config['privatekey_path']
+        current_cred = os.environ['GOOGLE_APPLICATION_CREDENTIALS']
+        if logger:
+            logger.log_text("Existing Google Credential: {0}".format(current_cred), severity='INFO')
+        new_cred = config['privatekey_path']
+        os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = new_cred
+        if logger:
+            logger.log_text("New Google Credential: {0}".format(new_cred), severity='INFO')
         self.client = storage.Client(project)
         self.bucket = self.client.get_bucket(bucket_name)
         self.tempdir = tempdir
         self.logger = logger
         self.config = config
+        os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = current_cred
+        if logger:
+            logger.log_text("Restoring Google Credential: {0}".format(current_cred), severity='INFO')
 
     #--------------------------------------
     # uploads a file to the bucket
