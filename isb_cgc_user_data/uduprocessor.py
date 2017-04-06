@@ -202,7 +202,7 @@ def process_upload(user_data_config, success_url, failure_url):
         requests.get(success_url)
     except:
         logger.log_text('uduprocessor registering failure', severity='ERROR')
-        logger.log_text(traceback.format_exc());
+        logger.log_text(traceback.format_exc(), severity='ERROR');
         requests.get(failure_url)
 
 
