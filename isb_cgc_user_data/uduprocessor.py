@@ -15,10 +15,8 @@
 
 import argparse
 import json
-import os
 import requests
 import traceback
-import sys
 
 import user_gen.user_gen_processing
 import user_gen.molecular_processing

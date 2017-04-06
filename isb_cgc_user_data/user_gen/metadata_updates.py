@@ -131,7 +131,7 @@ def insert_metadata_samples(config, data_df, table):
 Function to update rows in metadata_samples with has_datatype information.
 Create new row if doesn't exist.
 '''
-def update_molecular_metadata_samples_list(table, datatype, sample_barcodes, config):
+def update_molecular_metadata_samples_list(config, table, datatype, sample_barcodes):
     insert_stmt = 'INSERT INTO {0} (sample_barcode, has_{1}) VALUES (%s, %s) ON DUPLICATE KEY UPDATE has_{2}=1;'.format(table, datatype, datatype)
     value_list = []
     for barcode in sample_barcodes:

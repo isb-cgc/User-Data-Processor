@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2015, Institute for Systems Biology.
+# Copyright 2015-2017, Institute for Systems Biology.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -86,7 +86,7 @@ def parse_file(project_id, bq_dataset, bucket_name, file_data, filename, outfile
     update_metadata_data_list(config, cloudsql_tables['METADATA_DATA'], sample_metadata_list)
 
     # Update metadata_samples table
-    update_molecular_metadata_samples_list(cloudsql_tables['METADATA_SAMPLES'], metadata['data_type'], sample_barcodes)
+    update_molecular_metadata_samples_list(config, cloudsql_tables['METADATA_SAMPLES'], metadata['data_type'], sample_barcodes)
 
     # Generate feature names and bq_mappings
     table_name = file_data['BIGQUERY_TABLE_NAME']
