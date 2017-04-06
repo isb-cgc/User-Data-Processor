@@ -3,7 +3,7 @@
 import MySQLdb
 
 def cloudsql_connector(config):
-    if config['ssl_cert']:
+    if 'ssl_cert' in config:
         ssl_options = {
             'ca': config['ssl_ca'],
             'cert': config['ssl_cert'],

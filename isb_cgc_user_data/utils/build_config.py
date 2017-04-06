@@ -19,6 +19,8 @@ def read_dict(my_file_name):
     retval = {}
     with open(my_file_name, 'r') as f:
         for line in f:
+            if '=' not in line:
+                continue
             split_line = line.split('=')
             retval[split_line[0].strip()] = split_line[1].strip()
     return retval
