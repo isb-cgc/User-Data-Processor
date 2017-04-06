@@ -1,33 +1,29 @@
-import os
-from os.path import join, dirname
+
 
 import MySQLdb
 
-import dotenv
-
-dotenv.read_dotenv(join(dirname(__file__), '../../.env'))
-
-def cloudsql_connector():
-    if os.environ.has_key('ssl_cert'):
+def cloudsql_connector(config):
+    if config['ssl_cert']:
         ssl_options = {
-            'ca': os.environ.get('ssl_ca'),
-            'cert': os.environ.get('ssl_cert'),
-            'key': os.environ.get('ssl_key')
+            'ca': config['ssl_ca'],
+            'cert': config['ssl_cert'],
+            'key': config['ssl_key']
         }
 
         db = MySQLdb.connect(
-            host=os.environ.get('db_host', ''),
-            db=os.environ.get('db', ''),
-            user=os.environ.get('db_user', ''),
-            passwd=os.environ.get('db_password', ''),
+            host=config['db_host'],
+            db=config['db'],
+            user=config['db_user'],
+            passwd=config['db_password'],
             ssl=ssl_options
         )
     else:
 
         db = MySQLdb.connect(
-                host=os.environ.get('db_host', ''),
-                db=os.environ.get('db', ''),
-                user=os.environ.get('db_user', ''),
-                passwd=os.environ.get('db_password', ''))
+                host=config['db_host'],
+                db=config['db'],
+                user=config['db_user'],
+                passwd=config['db_password']
+        )
 
     return db

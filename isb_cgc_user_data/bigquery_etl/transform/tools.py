@@ -19,20 +19,20 @@ from collections import OrderedDict
 import pandas as pd
 import numpy as np
 from StringIO import StringIO
-import logging
 import chardet
 
-log = logging.getLogger(__name__)
 
 #--------------------------------------
 # Clean up the dataframe
 #--------------------------------------
-def cleanup_dataframe(df):
+def cleanup_dataframe(df, logger=None):
     """Cleans the dataframe
         - strips new lines, double, single quotes; None -> nan, etc
         - formats the column names for Bigquery input
     """
-    log.info("Cleaning up the dataframe")
+
+    if logger:
+        logger.log_text("Cleaning up the dataframe", severity='INFO')
 
     if df.empty:
         raise Exception("Empty dataframe passed to clean_up_dataframe fuction")
@@ -50,7 +50,7 @@ def cleanup_dataframe(df):
     df = df.fillna("__missing__value__")
 
     # convert to utf-8
-    df = df.applymap(lambda x: convert_encoding(x))
+    df = df.applymap(lambda x: convert_encoding(x, logger))
 
     # strip every value(this should get rid of ^M too)
     df = df.applymap(lambda x: str(x).strip())
@@ -95,10 +95,11 @@ def cleanup_dataframe(df):
 # if rollover_file is true
 # works only in a single bucket
 #----------------------------------------
-def convert_df_to_njson(df):
+def convert_df_to_njson(df, logger=None):
     """Converting dataframe into a new-line delimited JSON
     """
-    log.info("Converting dataframe into a new-line delimited JSON file")
+    if logger:
+        logger.log_text("Converting dataframe into a new-line delimited JSON file", severity='INFO')
 
     file_to_upload = StringIO()
 
@@ -110,18 +111,20 @@ def convert_df_to_njson(df):
     return file_to_upload.getvalue()
 
 
-def remove_duplicates(df, unique_key):
+def remove_duplicates(df, unique_key, logger=None):
     """Removes duplicates in a dataframe based on the unique combination of key
         unique_key accepts a list
     """
     df['duplicated'] = df.duplicated(unique_key)
     if not df[df.duplicated(unique_key)].empty:
-        log.debug("Found duplicate rows")
-        log.debug(df[df.duplicated(unique_key)].to_csv(sep="\t", index=False))
+        if logger:
+            logger.log_text("Found duplicate rows", severity='DEBUG')
+            logger.log_text(df[df.duplicated(unique_key)].to_csv(sep="\t", index=False), severity='DEBUG')
         df['duplicated'] = df.duplicated(unique_key)
         # drop duplicates
         df = df.drop_duplicates(unique_key)
-        log.debug("Deleted")
+        if logger:
+            logger.log_text("Deleted", severity='DEBUG')
     return df
 
 def mangle_dupe_cols(columns):
@@ -173,7 +176,7 @@ def assert_notnull_property(df, columns_list):
         raise Exception('Assert Property failed: Column values are null')
 
 
-def convert_encoding(text, new_coding='UTF-8'):
+def convert_encoding(text, new_coding='UTF-8', logger=None):
     """UTF-8 encode all strings
     """
     if isinstance(text, (int, float)):
@@ -184,13 +187,16 @@ def convert_encoding(text, new_coding='UTF-8'):
 
     try:
         encoding = chardet.detect(text)['encoding']
-        log.debug('Found {0} encoded string - {1}'.format(encoding, text))
+        if logger:
+            logger.log_text('Found {0} encoded string - {1}'.format(encoding, text), severity='DEBUG')
         if new_coding.upper() != encoding.upper():
             text = text.decode(encoding, text).encode(new_coding)
-            log.debug('New {0} encoded string - {1}'.format(new_coding, text))
+            if logger:
+                logger.log_text('New {0} encoded string - {1}'.format(new_coding, text), severity='DEBUG')
         return text
     except Exception as e:
-        log.error("Could not be decoded. Encoding failed because {0}".format(str(e)))
+        if logger:
+            logger.log_text("Could not be decoded. Encoding failed because {0}".format(str(e)), severity='ERROR')
         pass
 
     # decode to ascii-ignore and then encode to utf-8( default if others fail)
@@ -198,7 +204,8 @@ def convert_encoding(text, new_coding='UTF-8'):
     try:
         text = text.decode('ascii', 'ignore').encode(new_coding)
     except Exception as e:
-        log.error("Could not be :ascii ignored:. Encoding failed because {0}".format(str(e)))
+        if logger:
+            logger.log_text("Could not be :ascii ignored:. Encoding failed because {0}".format(str(e)), severity='ERROR')
         text = re.sub(r'[^\x00-\x7F]+', ' ', text)
     return text
 

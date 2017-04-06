@@ -18,27 +18,24 @@
 
 import os
 import sys
-from os.path import join, dirname
 
 import pandas as pd
 from isb_cgc_user_data.bigquery_etl.extract.gcloud_wrapper import GcsConnector
 from isb_cgc_user_data.bigquery_etl.extract.utils import convert_file_to_dataframe
 from isb_cgc_user_data.bigquery_etl.load import load_data_from_file
 from isb_cgc_user_data.bigquery_etl.transform.tools import cleanup_dataframe
-from isb_cgc_user_data.utils import dotenv
 
 from bigquery_table_schemas import get_molecular_schema
 
 from metadata_updates import update_metadata_data_list, update_molecular_metadata_samples_list, insert_feature_defs_list
 
-dotenv.read_dotenv(join(dirname(__file__), '../../.env'))
 
-def parse_file(project_id, bq_dataset, bucket_name, file_data, filename, outfilename, metadata, cloudsql_tables):
+def parse_file(project_id, bq_dataset, bucket_name, file_data, filename, outfilename, metadata, cloudsql_tables, config, logger):
 
-    print 'Begin processing {0}.'.format(filename)
+    logger.log_text('uduprocessor: Begin processing {0}.'.format(filename), severity='INFO')
 
     # connect to the cloud bucket
-    gcs = GcsConnector(project_id, bucket_name)
+    gcs = GcsConnector(project_id, bucket_name, config, logger=logger)
 
     #main steps: download, convert to df, cleanup, transform, add metadata
     filebuffer = gcs.download_blob_to_file(filename)
@@ -47,7 +44,7 @@ def parse_file(project_id, bq_dataset, bucket_name, file_data, filename, outfile
     data_df = convert_file_to_dataframe(filebuffer, skiprows=0, header=0)
 
     # clean-up dataframe
-    data_df = cleanup_dataframe(data_df)
+    data_df = cleanup_dataframe(data_df, logger=logger)
     new_df_data = []
 
     map_values = {}
@@ -86,7 +83,7 @@ def parse_file(project_id, bq_dataset, bucket_name, file_data, filename, outfile
         new_metadata = metadata.copy()
         new_metadata['sample_barcode'] = barcode
         sample_metadata_list.append(new_metadata)
-    update_metadata_data_list(cloudsql_tables['METADATA_DATA'], sample_metadata_list)
+    update_metadata_data_list(config, cloudsql_tables['METADATA_DATA'], sample_metadata_list)
 
     # Update metadata_samples table
     update_molecular_metadata_samples_list(cloudsql_tables['METADATA_SAMPLES'], metadata['data_type'], sample_barcodes)
@@ -96,7 +93,7 @@ def parse_file(project_id, bq_dataset, bucket_name, file_data, filename, outfile
     feature_defs = generate_feature_Defs(metadata['data_type'], metadata['study_id'], project_id, bq_dataset, table_name, new_df)
 
     # Update feature_defs table
-    insert_feature_defs_list(cloudsql_tables['FEATURE_DEFS'], feature_defs)
+    insert_feature_defs_list(config, cloudsql_tables['FEATURE_DEFS'], feature_defs)
 
     # upload the contents of the dataframe in njson format
     tmp_bucket = os.environ.get('tmp_bucket')
@@ -118,9 +115,10 @@ def parse_file(project_id, bq_dataset, bucket_name, file_data, filename, outfile
         is_schema_file=False)
 
     # Delete temporary files
-    print 'Deleting temporary file {0}'.format(outfilename)
-    gcs = GcsConnector(project_id, tmp_bucket)
+    logger.log_text('uduprocessor: Deleting temporary file {0}'.format(outfilename), severity='INFO')
+    gcs = GcsConnector(project_id, tmp_bucket, config, logger=logger)
     gcs.delete_blob(outfilename)
+
 
 def get_column_mapping(datatype):
     column_map = {
@@ -152,6 +150,8 @@ Function to generate a list of feature def for that datatype
 FeatureName will look like this: [Datatype] [Symbol (if available)]
 BqMapId will look like this: bq_project:bq_dataset:bq_table:datatype:symbol(if available):Level
 '''
+
+
 def generate_feature_Defs(datatype, study_id, bq_project, bq_dataset, bq_table, data_df):
     datatype_name_mapping = {
         'mrna': {
@@ -186,11 +186,12 @@ def generate_feature_Defs(datatype, study_id, bq_project, bq_dataset, bq_table, 
 
     return feature_defs
 
-def process_vcf_files(project_id, user_project, user_study, bucketname, bq_dataset, cloudsql_tables, vcf_file_list):
-    print 'Begin processing user_gen files.'
+
+def process_vcf_files(project_id, user_project, user_study, bucketname, bq_dataset, cloudsql_tables, vcf_file_list, config, logger):
+    logger.log_text('uduprocessor: Begin processing user_gen files.', severity='INFO')
 
     # connect to the cloud bucket
-    gcs = GcsConnector(project_id, bucket_name)
+    gcs = GcsConnector(project_id, bucket_name, config, logger=logger)
     data_df = pd.DataFrame()
 
     # Run VCF to MAF processor

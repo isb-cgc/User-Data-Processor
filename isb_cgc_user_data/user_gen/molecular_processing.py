@@ -13,30 +13,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Script to parse Protein files
+"""Script to parse Molecular data files
 """
 
 import os
 import sys
-from os.path import join, dirname
 
 import pandas as pd
 from isb_cgc_user_data.bigquery_etl.extract.gcloud_wrapper import GcsConnector
 from isb_cgc_user_data.bigquery_etl.extract.utils import convert_file_to_dataframe
 from isb_cgc_user_data.bigquery_etl.load import load_data_from_file
 from isb_cgc_user_data.bigquery_etl.transform.tools import cleanup_dataframe
-from isb_cgc_user_data.utils import dotenv
 
 from bigquery_table_schemas import get_molecular_schema
 from metadata_updates import update_metadata_data_list, update_molecular_metadata_samples_list, insert_feature_defs_list, update_metadata_participants
 
-dotenv.read_dotenv(join(dirname(__file__), '../../.env'))
 
-def parse_file(project_id, bq_dataset, bucket_name, file_data, filename, outfilename, metadata, cloudsql_tables, logger):
+def parse_file(project_id, bq_dataset, bucket_name, file_data, filename,
+               outfilename, metadata, cloudsql_tables, config, logger):
     logger.log_text('uduprocessor: Begin molecular processing {0}'.format(filename), severity='INFO')
 
     # connect to the cloud bucket
-    gcs = GcsConnector(project_id, bucket_name)
+    gcs = GcsConnector(project_id, bucket_name, config, logger=logger)
     logger.log_text('uduprocessor: GcsConnector Success', severity='INFO')
 
     #main steps: download, convert to df, cleanup, transform, add metadata
@@ -48,7 +46,7 @@ def parse_file(project_id, bq_dataset, bucket_name, file_data, filename, outfile
     logger.log_text('uduprocessor: convert_file_to_dataframe success', severity='INFO')
 
     # clean-up dataframe
-    data_df = cleanup_dataframe(data_df)
+    data_df = cleanup_dataframe(data_df, logger=logger)
     logger.log_text('uduprocessor: cleanup_dataframe success', severity='INFO')
     new_df_data = []
 
@@ -68,7 +66,6 @@ def parse_file(project_id, bq_dataset, bucket_name, file_data, filename, outfile
 
                 new_df_obj['sample_barcode'] = i # Normalized to match user_gen
                 new_df_obj['project_id'] = metadata['project_id']
-             #   new_df_obj['study_id'] = metadata['study_id']
                 new_df_obj['Platform'] = metadata['platform']
                 new_df_obj['Pipeline'] = metadata['pipeline']
 
@@ -88,12 +85,12 @@ def parse_file(project_id, bq_dataset, bucket_name, file_data, filename, outfile
         new_metadata = metadata.copy()
         new_metadata['sample_barcode'] = barcode
         sample_metadata_list.append(new_metadata)
-    update_metadata_data_list(cloudsql_tables['METADATA_DATA'], sample_metadata_list)
+    update_metadata_data_list(config, cloudsql_tables['METADATA_DATA'], sample_metadata_list)
     logger.log_text('uduprocessor: update_metadata_data_list success', severity='INFO')
 
     # Update metadata_samples table
-    update_molecular_metadata_samples_list(cloudsql_tables['METADATA_SAMPLES'], metadata['data_type'], sample_barcodes)
-    update_metadata_participants(cloudsql_tables['METADATA_SAMPLES'])
+    update_molecular_metadata_samples_list(config, cloudsql_tables['METADATA_SAMPLES'], metadata['data_type'], sample_barcodes)
+    update_metadata_participants(config, cloudsql_tables['METADATA_SAMPLES'])
     logger.log_text('uduprocessor: Update metadata_samples table success', severity='INFO')
 
     # Generate feature names and bq_mappings
@@ -102,7 +99,7 @@ def parse_file(project_id, bq_dataset, bucket_name, file_data, filename, outfile
     logger.log_text('uduprocessor: generate_feature_Defs success', severity='INFO')
 
     # Update feature_defs table
-    insert_feature_defs_list(cloudsql_tables['FEATURE_DEFS'], feature_defs)
+    insert_feature_defs_list(config, cloudsql_tables['FEATURE_DEFS'], feature_defs)
     logger.log_text('uduprocessor: insert_feature_defs_list success', severity='INFO')
 
     # upload the contents of the dataframe in njson format
@@ -127,11 +124,10 @@ def parse_file(project_id, bq_dataset, bucket_name, file_data, filename, outfile
     logger.log_text('uduprocessor: load_data_from_file.run success', severity='INFO')
 
     # Delete temporary files
-    logger.log_text('uduprocessor: Deleting temporary file {0}'.format(outfilename), severity='INFO')
 
-    gcs = GcsConnector(project_id, tmp_bucket)
+    gcs = GcsConnector(project_id, tmp_bucket, config, logger=logger)
     gcs.delete_blob(outfilename)
-    logger.log_text('uduprocessor: Deleting temporary file {0}'.format(outfilename), severity='INFO')
+    logger.log_text('uduprocessor: Deleted temporary file {0}'.format(outfilename), severity='INFO')
 
 def get_column_mapping(datatype):
     column_map = {

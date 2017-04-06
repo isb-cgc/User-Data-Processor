@@ -3,7 +3,7 @@ from argparse import ArgumentParser
 import MySQLdb
 
 from isb_cgc_user_data.utils.sql_connector import cloudsql_connector
-
+from isb_cgc_user_data.utils import build_config
 
 def user_metadata():
     return [
@@ -54,8 +54,8 @@ def user_feature_def():
          'type': 'VARCHAR(200)'}
     ]
 
-def create_test_tables(user_id=1, project_id=1):
-    db = cloudsql_connector()
+def create_test_tables(config, user_id=1, project_id=1):
+    db = cloudsql_connector(config)
 
     cursor = db.cursor(MySQLdb.cursors.DictCursor)
     create_col_template = '%s %s\n\t'
@@ -84,8 +84,8 @@ def create_test_tables(user_id=1, project_id=1):
     cursor.close()
     db.close()
 
-def delete_test_tables(user_id=1, project_id=1):
-    db = cloudsql_connector()
+def delete_test_tables(config, user_id=1, project_id=1):
+    db = cloudsql_connector(config)
     cursor = db.cursor()
 
     delete_stmt = 'DROP TABLE user_metadata_{0}_{1}'.format(user_id, project_id)
@@ -97,7 +97,8 @@ def delete_test_tables(user_id=1, project_id=1):
 
 
 if __name__ == '__main__':
-
+    config = build_config('config.txt')
+    logger = None
     cmd_line_parser = ArgumentParser(description="Full sample set cohort utility")
     cmd_line_parser.add_argument('USER_ID', type=str, help="Google Cloud project ID")
     cmd_line_parser.add_argument('PROJECT_ID', type=str, help="Google Cloud project ID")
@@ -109,9 +110,9 @@ if __name__ == '__main__':
     project_id = args.PROJECT_ID
 
     if args.operation == 'create':
-        create_test_tables(user_id, project_id)
+        create_test_tables(config, user_id, project_id)
     elif args.operation == 'delete':
-        delete_test_tables(user_id, project_id)
+        delete_test_tables(config, user_id, project_id)
     else:
         print 'Operation not recognized. HOW DID THIS HAPPEN!?'
 

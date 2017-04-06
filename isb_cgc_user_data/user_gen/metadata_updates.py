@@ -5,7 +5,7 @@ from cloudsql_table_schemas import user_metadata
 from isb_cgc_user_data.utils.sql_connector import cloudsql_connector
 
 
-def cloudsql_append_column(table, missing_column_names, all_columns, inputfilename):
+def cloudsql_append_column(config, table, missing_column_names, all_columns, inputfilename):
     columns = filter(lambda column: column['NAME'] in missing_column_names, all_columns)
 
     alter_stmt = 'ALTER TABLE {0} ADD '.format(table)
@@ -20,7 +20,7 @@ def cloudsql_append_column(table, missing_column_names, all_columns, inputfilena
 
     alter_stmt += ');'
     # print alter_stmt
-    db = cloudsql_connector()
+    db = cloudsql_connector(config)
     cursor = db.cursor(MySQLdb.cursors.DictCursor)
     cursor.execute(alter_stmt)
     db.commit()
@@ -35,8 +35,8 @@ def cloudsql_append_column(table, missing_column_names, all_columns, inputfilena
 Function to check if the given columns are the same as the table we're trying to insert into.
 Returns list of columns that are not in the the table.
 '''
-def check_update_metadata_samples(table, columns):
-    db = cloudsql_connector()
+def check_update_metadata_samples(config, table, columns):
+    db = cloudsql_connector(config)
     cursor = db.cursor(MySQLdb.cursors.DictCursor)
     cursor.execute('describe {0};'.format(table))
     column_names = [d['NAME'] for d in columns]
@@ -55,7 +55,7 @@ def check_update_metadata_samples(table, columns):
 Function to append data to a given metadata_data table.
 Takes in one row only.
 '''
-def update_metadata_data(table, metadata):
+def update_metadata_data(config, table, metadata):
     metadata_schema = user_metadata()
     column_titles = [d['column_name'] for d in metadata_schema]
     value_list = []
@@ -69,7 +69,7 @@ def update_metadata_data(table, metadata):
     # print insert_stmt
     # print value_list
 
-    db = cloudsql_connector()
+    db = cloudsql_connector(config)
     cursor = db.cursor(MySQLdb.cursors.DictCursor)
     cursor.execute(insert_stmt)
     db.commit()
@@ -80,7 +80,7 @@ def update_metadata_data(table, metadata):
 Function to append data to a given metadata_data table.
 Takes in a list of metadata objects
 '''
-def update_metadata_data_list(table, metadata):
+def update_metadata_data_list(config, table, metadata):
     metadata_schema = user_metadata()
     column_titles = [d['column_name'] for d in metadata_schema]
     insert_stmt = 'INSERT INTO {0} ({1}) VALUES ({2});'.format(table, ','.join(column_titles), ','.join(['%s' for i in range(0,len(column_titles))]))
@@ -98,7 +98,7 @@ def update_metadata_data_list(table, metadata):
     print insert_stmt
     if len(value_list) > 0:
         print value_list[0]
-    db = cloudsql_connector()
+    db = cloudsql_connector(config)
     cursor = db.cursor(MySQLdb.cursors.DictCursor)
     cursor.executemany(insert_stmt, value_list)
     db.commit()
@@ -108,7 +108,7 @@ def update_metadata_data_list(table, metadata):
 '''
 Function to insert all metadata_samples data at once from user_gen datatype
 '''
-def insert_metadata_samples(data_df, table):
+def insert_metadata_samples(config, data_df, table):
     columns = data_df.columns.values
     data_df = data_df.where((pd.notnull(data_df)), None)
     insert_stmt = 'INSERT INTO {0} ({1}) VALUES({2})'.format(table,
@@ -120,7 +120,7 @@ def insert_metadata_samples(data_df, table):
         row = data_df[i:i+1]
         value_list.append(tuple(row.values[0]))
 
-    db = cloudsql_connector()
+    db = cloudsql_connector(config)
     cursor = db.cursor(MySQLdb.cursors.DictCursor)
     cursor.executemany(insert_stmt, value_list)
     db.commit()
@@ -131,13 +131,13 @@ def insert_metadata_samples(data_df, table):
 Function to update rows in metadata_samples with has_datatype information.
 Create new row if doesn't exist.
 '''
-def update_molecular_metadata_samples_list(table, datatype, sample_barcodes):
+def update_molecular_metadata_samples_list(table, datatype, sample_barcodes, config):
     insert_stmt = 'INSERT INTO {0} (sample_barcode, has_{1}) VALUES (%s, %s) ON DUPLICATE KEY UPDATE has_{2}=1;'.format(table, datatype, datatype)
     value_list = []
     for barcode in sample_barcodes:
         value_list.append((barcode, 1))
     print insert_stmt
-    db = cloudsql_connector()
+    db = cloudsql_connector(config)
     cursor = db.cursor(MySQLdb.cursors.DictCursor)
     cursor.executemany(insert_stmt, value_list)
     db.commit()
@@ -147,10 +147,10 @@ def update_molecular_metadata_samples_list(table, datatype, sample_barcodes):
 '''
 Function to update empty participant barcode values
 '''
-def update_metadata_participants(table):
+def update_metadata_participants(config, table):
     update_stmt = 'UPDATE {0} set case_barcode=CONCAT("cgc_", sample_barcode) where case_barcode is NULL;'.format(table)
     print update_stmt
-    db = cloudsql_connector()
+    db = cloudsql_connector(config)
     cursor = db.cursor()
     cursor.execute(update_stmt)
     cursor.close()
@@ -160,9 +160,9 @@ def update_metadata_participants(table):
 '''
 Function to insert one new feature definition
 '''
-def insert_feature_defs(sql_table, project_id, name, bq_mapping, shared_map_id, type):
+def insert_feature_defs(config, sql_table, project_id, name, bq_mapping, shared_map_id, type):
     insert_stmt = 'INSERT INTO {0} (project_id, feature_name, bq_map_id, shared_map_id, is_numeric) VALUES (%s,%s,%s,%s,%s);'
-    db = cloudsql_connector()
+    db = cloudsql_connector(config)
     cursor = db.cursor(MySQLdb.cursors.DictCursor)
     cursor.executemany(insert_stmt, (project_id, name, bq_mapping, shared_map_id, type))
     db.commit()
@@ -172,10 +172,10 @@ def insert_feature_defs(sql_table, project_id, name, bq_mapping, shared_map_id, 
 '''
 Function to insert list of new feature definitions
 '''
-def insert_feature_defs_list(sql_table, data_list):
+def insert_feature_defs_list(config, sql_table, data_list):
     insert_stmt = 'INSERT INTO {0} (project_id, feature_name, bq_map_id, shared_map_id, is_numeric) VALUES (%s,%s,%s,%s,%s);'.format(sql_table)
     print insert_stmt
-    db = cloudsql_connector()
+    db = cloudsql_connector(config)
     cursor = db.cursor(MySQLdb.cursors.DictCursor)
     cursor.executemany(insert_stmt, data_list)
     db.commit()

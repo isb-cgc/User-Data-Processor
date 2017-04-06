@@ -17,7 +17,7 @@
 """
 from isb_cgc_user_data.bigquery_etl.extract.gcloud_wrapper import GcsConnector
 from isb_cgc_user_data.bigquery_etl.utils import gcutils
-
+from isb_cgc_user_data.utils import build_config
 
 # run python demo.py
 
@@ -25,15 +25,16 @@ def main():
     """Example to download a file from the Google Storage, transform,
         and load to Google Storage and BigQuery
     """
-
+    logger=None
     project_id = ''
     bucket_name = ''
     # example file in bucket
     filename = ''
     outfilename = ''
+    config = build_config('config.txt')
 
     # connect to the google cloud bucket
-    gcs = GcsConnector(project_id, bucket_name)
+    gcs = GcsConnector(project_id, bucket_name, config, logger)
 
      # main steps: download, convert to df
     data_df = gcutils.convert_blob_to_dataframe(gcs, project_id, bucket_name, filename, skiprows=1)

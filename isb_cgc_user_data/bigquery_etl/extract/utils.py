@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #!/usr/bin/env python
 
-# Copyright 2015, Institute for Systems Biology.
+# Copyright 2015-2017, Institute for Systems Biology.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -19,16 +19,13 @@
 
 import json
 import pandas as pd
-import logging
 
-log = logging.getLogger(__name__)
-
-def convert_file_to_dataframe(filepath_or_buffer, sep="\t", skiprows=0, rollover=False, nrows=None, header=None):
+def convert_file_to_dataframe(filepath_or_buffer, sep="\t", skiprows=0, rollover=False, nrows=None, header=None, logger=None):
     """does some required data cleaning and
       then converts into a dataframe
     """
-
-    log.info("Converting  file to a dataframe")
+    if logger:
+        logger.log_text("Converting  file to a dataframe", severity='INFO')
 
     try:
         # items to change to NaN/NULL
@@ -40,7 +37,8 @@ def convert_file_to_dataframe(filepath_or_buffer, sep="\t", skiprows=0, rollover
                                 comment='#', na_values=na_values, dtype='object', nrows=nrows, header=header)
 
     except Exception as exp:
-        log.error(msg=exp.message)
+        if logger:
+            logger.log_text("Read Table Error: {0}".format(str(exp.message)), severity='ERROR')
         raise
 
     filepath_or_buffer.close() # close  StringIO
@@ -54,9 +52,10 @@ def convert_file_to_dataframe(filepath_or_buffer, sep="\t", skiprows=0, rollover
 # we are not loading into string, but into a temp file
 # works only in a single bucket
 #----------------------------------------
-def convert_njson_file_to_df(filebuffer):
+def convert_njson_file_to_df(filebuffer, logger=None):
     """Converting new-line delimited JSON file into dataframe"""
-    log.info("Converting new-line delimited JSON file into dataframe")
+    if logger:
+        logger.log_text("Converting new-line delimited JSON file into dataframe", severity='INFO')
 
     # convert the file into a dataframe
     lines = [json.loads(l) for l in filebuffer.splitlines()]

@@ -25,9 +25,17 @@ import user_gen.molecular_processing
 import user_gen.low_level_processing
 import user_gen.vcf_processing
 from google.cloud import logging
+from isb_cgc_user_data.utils.build_config import read_dict
 
-# FIX ME! Get this from config file
-STACKDRIVER_LOG = 'udu_dev'
+#
+# Here we read the config and secret file
+#
+
+my_secrets = read_dict('../config/udu_secrets.txt')
+my_config = read_dict('../config/udu_config.txt')
+my_config.update(my_secrets)
+
+STACKDRIVER_LOG = my_config['UDU_STACKDRIVER_LOG']
 
 # STACKDRIVER LOGGING
 
@@ -45,8 +53,6 @@ def generate_bq_schema(columns):
 def process_upload(user_data_config, success_url, failure_url):
     try:
         logger.log_text('uduprocessor handling request', severity='INFO')
-        schemas_dir = os.path.join(os.getcwd(), 'schemas/')
-        logger.log_text('uduprocessor: schemas_dir: {0}'.format(schemas_dir), severity='INFO')
         configs = open(user_data_config).read()
         logger.log_text('uduprocessor: configs: {0}'.format(user_data_config), severity='INFO')
         data = json.loads(configs)
@@ -80,10 +86,10 @@ def process_upload(user_data_config, success_url, failure_url):
 
         # TODO: Add processor for low level file listings
 
-        logger.log_text('uduprocessor: Number of user_gen files: {0}'.format(len(user_gen_list), severity='INFO'))
-        logger.log_text('uduprocessor: Number of vcf files: {0}'.format(len(vcf_file_list), severity='INFO'))
-        logger.log_text('uduprocessor: Number of molecular files: {0}'.format(len(mol_file_list), severity='INFO'))
-        logger.log_text('uduprocessor: Number of low level files: {0}'.format(len(low_level_list), severity='INFO'))
+        logger.log_text('uduprocessor: Number of user_gen files: {0}'.format(len(user_gen_list)), severity='INFO')
+        logger.log_text('uduprocessor: Number of vcf files: {0}'.format(len(vcf_file_list)), severity='INFO')
+        logger.log_text('uduprocessor: Number of molecular files: {0}'.format(len(mol_file_list)), severity='INFO')
+        logger.log_text('uduprocessor: Number of low level files: {0}'.format(len(low_level_list)), severity='INFO')
 
         # Process all user_gen files together
         if len(user_gen_list):
@@ -94,7 +100,9 @@ def process_upload(user_data_config, success_url, failure_url):
                                                                 bucketname,
                                                                 bq_dataset,
                                                                 cloudsql_tables,
-                                                                user_gen_list)
+                                                                user_gen_list,
+                                                                my_config,
+                                                                logger)
             logger.log_text('uduprocessor: Processed user_gen', severity='INFO')
 
         # Process all VCF Files
@@ -106,7 +114,9 @@ def process_upload(user_data_config, success_url, failure_url):
                                                       bucketname,
                                                       bq_dataset,
                                                       cloudsql_tables,
-                                                      vcf_file_list)
+                                                      vcf_file_list,
+                                                      my_config,
+                                                      logger)
             logger.log_text('uduprocessor: Processed vcf', severity='INFO')
 
         # Process all other datatype files
@@ -144,6 +154,7 @@ def process_upload(user_data_config, success_url, failure_url):
                                                          outputfilename,
                                                          metadata,
                                                          cloudsql_tables,
+                                                         my_config,
                                                          logger
                                                         )
                 logger.log_text('uduprocessor: Processed molecular {0}'.format(blob_name), severity='INFO')
@@ -183,7 +194,9 @@ def process_upload(user_data_config, success_url, failure_url):
                                                          blob_name,
                                                          outputfilename,
                                                          metadata,
-                                                         cloudsql_tables
+                                                         cloudsql_tables,
+                                                         my_config,
+                                                         logger
                                                         )
                 logger.log_text('uduprocessor: Processed low-level {0}'.format(blob_name), severity='INFO')
             logger.log_text('uduprocessor: Processed low-level', severity='INFO')

@@ -66,6 +66,7 @@ UPLOAD_FOLDER = my_config['UDU_UPLOAD_FOLDER']
 RESPONSE_LOCATION_PREFIX = my_config['UDU_RESPONSE_LOCATION']
 PING_COUNT = int(my_config['UDU_PING_COUNT'])
 STACKDRIVER_LOG = my_config['UDU_STACKDRIVER_LOG']
+PSQ_TOPIC_NAME = my_config['UDU_PSQ_TOPIC_NAME']
 
 # FLASK
 app = Flask(__name__)
@@ -76,8 +77,7 @@ basic_auth = BasicAuth(app)
 
 # PUB/SUB QUEUE
 pubsub_client = pubsub.Client(project=PROJECT_ID)
-#datastore_client = datastore.Client(project=PROJECT_ID)
-q = psq.Queue(pubsub_client) #, storage = psq.DatastoreStorage(datastore_client))
+q = psq.Queue(pubsub_client, name=PSQ_TOPIC_NAME)
 
 # STACKDRIVER LOGGING
 

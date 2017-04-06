@@ -18,26 +18,21 @@ Script to parse user generated data
 """
 import os
 import sys
-from os.path import join, dirname
 
 import pandas as pd
 from isb_cgc_user_data.bigquery_etl.extract.gcloud_wrapper import GcsConnector
 from isb_cgc_user_data.bigquery_etl.extract.utils import convert_file_to_dataframe
 from isb_cgc_user_data.bigquery_etl.load import load_data_from_file
 from isb_cgc_user_data.bigquery_etl.transform.tools import cleanup_dataframe
-from isb_cgc_user_data.utils import dotenv
 
 from metadata_updates import update_metadata_data_list, insert_metadata_samples, insert_feature_defs_list
 
-dotenv.read_dotenv(join(dirname(__file__), '../../.env'))
+def process_user_gen_files(project_id, user_project_id, study_id, bucket_name, bq_dataset, cloudsql_tables, files, config, logger):
 
-
-def process_user_gen_files(project_id, user_project_id, study_id, bucket_name, bq_dataset, cloudsql_tables, files):
-
-    print 'Begin processing user_gen files.'
+    logger.log_text('uduprocessor: Begin processing user_gen files.', severity='INFO')
 
     # connect to the cloud bucket
-    gcs = GcsConnector(project_id, bucket_name)
+    gcs = GcsConnector(project_id, bucket_name, config, logger=logger)
     data_df = pd.DataFrame()
 
     # Collect all columns that get passed in for generating BQ schema later
@@ -60,8 +55,6 @@ def process_user_gen_files(project_id, user_project_id, study_id, bucket_name, b
             'data_type': file['DATATYPE']
         }
 
-
-
         # download, convert to df
         filebuffer = gcs.download_blob_to_file(blob_name)
 
@@ -69,7 +62,7 @@ def process_user_gen_files(project_id, user_project_id, study_id, bucket_name, b
         column_mapping = get_column_mapping(file['COLUMNS'])
         if idx == 0:
             data_df = convert_file_to_dataframe(filebuffer, skiprows=0, header=0)
-            data_df = cleanup_dataframe(data_df)
+            data_df = cleanup_dataframe(data_df, logger=logger)
             data_df.rename(columns=column_mapping, inplace=True)
 
             if metadata['participant_barcode'] == '':
@@ -79,30 +72,29 @@ def process_user_gen_files(project_id, user_project_id, study_id, bucket_name, b
                 # Make sure to fill in empty participant barcodes
                 data_df[metadata['participant_barcode']][data_df['participant_barcode']==None] = 'cgc_' + data_df['sample_barcode'][data_df['participant_barcode']==None]
 
-
             # Generate Metadata for this file
-            insert_metadata(data_df, metadata, cloudsql_tables['METADATA_DATA'])
+            insert_metadata(data_df, metadata, cloudsql_tables['METADATA_DATA'], config)
 
         else:
             # convert blob into dataframe
             new_df = convert_file_to_dataframe(filebuffer, skiprows=0, header=0)
-            new_df = cleanup_dataframe(new_df)
+            new_df = cleanup_dataframe(new_df, logger=logger)
             new_df.rename(columns=column_mapping, inplace=True)
 
             # Generate Metadata for this file
-            insert_metadata(new_df, metadata, cloudsql_tables['METADATA_DATA'])
+            insert_metadata(new_df, metadata, cloudsql_tables['METADATA_DATA'], config)
 
             # TODO: Write function to check for participant barcodes, for now, we assume each file contains SampleBarcode Mapping
             data_df = pd.merge(data_df, new_df, on='sample_barcode', how='outer')
 
     # For complete dataframe, create metadata_samples rows
-    print 'Inserting into data into {0}.'.format(cloudsql_tables['METADATA_SAMPLES'])
-    data_df = cleanup_dataframe(data_df)
+    logger.log_text('uduprocessor: Inserting into data into {0}.'.format(cloudsql_tables['METADATA_SAMPLES'], severity='INFO'))
+    data_df = cleanup_dataframe(data_df, logger=logger)
     data_df['has_mrna'] = 0
     data_df['has_mirna'] = 0
     data_df['has_protein'] = 0
     data_df['has_meth'] = 0
-    insert_metadata_samples(data_df, cloudsql_tables['METADATA_SAMPLES'])
+    insert_metadata_samples(config, data_df, cloudsql_tables['METADATA_SAMPLES'])
 
     # Update and create bq table file
     temp_outfile = cloudsql_tables['METADATA_SAMPLES'] + '.out'
@@ -128,11 +120,11 @@ def process_user_gen_files(project_id, user_project_id, study_id, bucket_name, b
     feature_defs = generate_feature_defs(study_id, project_id, bq_dataset, table_name, schema)
 
     # Update feature_defs table
-    insert_feature_defs_list(cloudsql_tables['FEATURE_DEFS'], feature_defs)
+    insert_feature_defs_list(config, cloudsql_tables['FEATURE_DEFS'], feature_defs)
 
     # Delete temporary files
-    print 'Deleting temporary file {0}'.format(temp_outfile)
-    gcs = GcsConnector(project_id, tmp_bucket)
+    logger.log_text('uduprocessor: Deleting temporary file {0}'.format(temp_outfile), severity='INFO')
+    gcs = GcsConnector(project_id, tmp_bucket, config, logger=logger)
     gcs.delete_blob(temp_outfile)
 
 
@@ -146,14 +138,14 @@ def get_column_mapping(columns):
     return column_map
 
 
-def insert_metadata(data_df, metadata, table):
+def insert_metadata(data_df, metadata, table, config):
     sample_barcodes = list(set([k for d, k in data_df['sample_barcode'].iteritems()]))
     sample_metadata_list = []
     for barcode in sample_barcodes:
         new_metadata = metadata.copy()
         new_metadata['sample_barcode'] = barcode
         sample_metadata_list.append(new_metadata)
-    update_metadata_data_list(table, sample_metadata_list)
+    update_metadata_data_list(config, table, sample_metadata_list)
 
 def generate_bq_schema(columns):
     obj = []

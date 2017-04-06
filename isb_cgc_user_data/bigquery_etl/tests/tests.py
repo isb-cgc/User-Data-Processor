@@ -38,12 +38,12 @@ def assert_notnull_property(df, columns_list=[]):
     
     assert (null_row_count == 0), "Selected columns cannot have NULL/NaN values"
 
-def test_blob_exists(project_id, bucket_name, df):
+def test_blob_exists(project_id, bucket_name, df, config, logger):
     """
     Checks if the DataFileNameKey blob exists in the bucket
     """
-     # connect to the cloud bucket
-    gcs = GcsConnector(project_id, bucket_name)
+     # connect to the cloud bucketo
+    gcs = GcsConnector(project_id, bucket_name, config, logger)
     for idx, row in df.iterrows():
         records = row.to_dict()
         print records['DatafileNameKey']

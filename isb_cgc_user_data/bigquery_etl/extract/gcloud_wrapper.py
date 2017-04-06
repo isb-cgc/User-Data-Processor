@@ -14,34 +14,26 @@
 # limitations under the License.
 
 # -*- coding: utf-8 -*-
-import logging
 import os
 import tempfile
 import time
 from StringIO import StringIO
-from os.path import join, dirname
 
 import pandas as pd
 from gcloud import storage
 from retrying import retry
 
-from isb_cgc_user_data.bigquery_etl.utils import dotenv
-
-log = logging.getLogger(__name__)
-dotenv.read_dotenv(join(dirname(__file__), '../../../.env'))
-
-PRIVATEKEY_PATH = join(dirname(__file__), '../../../', os.environ.get('privatekey_path'))
-print PRIVATEKEY_PATH
-
 class GcsConnector(object):
     """Google Cloud Storage Connector
     """
-    def __init__(self, project, bucket_name, tempdir='/tmp'):
+    def __init__(self, project, bucket_name, config, tempdir='/tmp', logger=None):
         # connect to the cloud bucket
-        os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = PRIVATEKEY_PATH
+        os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = config['privatekey_path']
         self.client = storage.Client(project)
         self.bucket = self.client.get_bucket(bucket_name)
         self.tempdir = tempdir
+        self.logger = logger
+        self.config = config
 
     #--------------------------------------
     # uploads a file to the bucket
@@ -51,13 +43,16 @@ class GcsConnector(object):
     # Check if the blob exits
     #--------------------------------------
     def upload_from_filename(self, local_filename, dest_filename):
-        log.info("Uploading file :{0} to bucket".format(local_filename))
+        if self.logger:
+            self.logger.log_text("Uploading file: {0} to bucket".format(local_filename), severity='INFO')
         try:
             self.bucket.upload_file(local_filename, dest_filename)
         except Exception as e:
-           log.error(e)
-           raise
-        log.info("Uploaded file :{0} to bucket".format(dest_filename))
+            if self.logger:
+                self.logger.log_text("error on upload: {0}".format(str(e)), severity='ERROR')
+            raise
+        if self.logger:
+            self.logger.log_text("Uploaded file: {0} to bucket".format(dest_filename), severity='INFO')
         return True
 
     #-------------------------------------------
@@ -77,7 +72,8 @@ class GcsConnector(object):
            temp_data_file = self.create_tempfile()
            blob.download_to_filename(temp_data_file.name)
         else:
-           log.info("StringIO")
+           if self.logger:
+               self.logger.log_text("StringIO", severity='INFO')
            temp_data_file = StringIO() # string buffer
            blob.download_to_file(temp_data_file)
 
@@ -100,7 +96,8 @@ class GcsConnector(object):
     def search_files(self, search_patterns, regex_search_pattern, prefixes=["tcga/"]):
         files_info = []
         for prefix in prefixes:
-            log.info("Searching for files with search patters - {0}, {1}, and prefix - {2}".format(search_patterns, regex_search_pattern.pattern, prefix))
+            if self.logger:
+                self.logger.log_text("Searching for files with search patters - {0}, {1}, and prefix - {2}".format(search_patterns, regex_search_pattern.pattern, prefix), severity='INFO')
             for blob in self.bucket.list_blobs(prefix=prefix):
                 filename = blob.name
                 size = blob.size
@@ -121,7 +118,8 @@ class GcsConnector(object):
                 })
 
         df = pd.DataFrame(files_info)
-        log.info('Found {0} files in the bucket matching the pattern'.format(len(df.index)))
+        if self.logger:
+            self.logger.log_text('Found {0} files in the bucket matching the pattern'.format(len(df.index)), severity='INFO')
         return df
 
     def retry_if_result_none(result):
@@ -135,13 +133,15 @@ class GcsConnector(object):
         upload_blob.upload_from_string(df_stringIO)
         # set blob metadata
         if metadata:
-            log.info("Setting object metadata")
+            if self.logger:
+                self.logger.log_text("Setting object metadata", severity='INFO')
             upload_blob.metadata = metadata
             upload_blob.patch()
 
         # check if the uploaded blob exists. Just a sanity check
         if upload_blob.exists():
-            log.info("The uploaded file {0} has size {1} bytes.".format(blobname, upload_blob.size))
+            if self.logger:
+                self.logger.log_text("The uploaded file {0} has size {1} bytes.".format(blobname, upload_blob.size), severity='INFO')
             return True
         else:
             raise Exception('File upload failed - {0}.'.format(blobname))
@@ -157,7 +157,8 @@ class GcsConnector(object):
     @retry(retry_on_result=retry_if_result_none, wait_exponential_multiplier=2000, wait_exponential_max=10000, stop_max_delay=60000, stop_max_attempt_number=3)
     def convert_df_to_njson_and_upload(self, df, destination_blobname, metadata={}, tmp_bucket='isb-cgc-dev'):
 
-        log.info("Converting dataframe into a new-line delimited JSON file")
+        if self.logger:
+            self.logger.log_text("Converting dataframe into a new-line delimited JSON file", severity='INFO')
 
         file_to_upload = StringIO()
 
@@ -171,14 +172,16 @@ class GcsConnector(object):
         upload_blob.upload_from_string(file_to_upload.getvalue())
         # set blob metadata
         if metadata:
-            log.info("Setting object metadata")
+            if self.logger:
+                self.logger.log_text("Setting object metadata", severity='INFO')
             upload_blob.metadata = metadata
             upload_blob.patch()
         file_to_upload.close()
 
         # check if the uploaded blob exists. Just a sanity check
         if upload_blob.exists():
-            log.info("The uploaded file {0} has size {1} bytes.".format(destination_blobname, upload_blob.size))
+            if self.logger:
+                self.logger.log_text("The uploaded file {0} has size {1} bytes.".format(destination_blobname, upload_blob.size), severity='INFO')
             return True
         else:
             raise Exception('File upload failed - {0}.'.format(destination_blobname)) 
