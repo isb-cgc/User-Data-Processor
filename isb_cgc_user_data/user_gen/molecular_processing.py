@@ -103,7 +103,7 @@ def parse_file(project_id, bq_dataset, bucket_name, file_data, filename,
     logger.log_text('uduprocessor: insert_feature_defs_list success', severity='INFO')
 
     # upload the contents of the dataframe in njson format
-    tmp_bucket = os.environ.get('tmp_bucket')
+    tmp_bucket = config['tmp_bucket']
     gcs.convert_df_to_njson_and_upload(new_df, outfilename, metadata=metadata, tmp_bucket=tmp_bucket)
     logger.log_text('uduprocessor: convert_df_to_njson_and_upload success', severity='INFO')
 

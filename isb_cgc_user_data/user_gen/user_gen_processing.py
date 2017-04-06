@@ -98,7 +98,7 @@ def process_user_gen_files(project_id, user_project_id, study_id, bucket_name, b
 
     # Update and create bq table file
     temp_outfile = cloudsql_tables['METADATA_SAMPLES'] + '.out'
-    tmp_bucket = os.environ.get('tmp_bucket')
+    tmp_bucket = config['tmp_bucket']
     gcs.convert_df_to_njson_and_upload(data_df, temp_outfile, tmp_bucket=tmp_bucket)
 
     # Using temporary file location (in case we don't have write permissions on user's bucket?
