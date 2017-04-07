@@ -1,3 +1,16 @@
+# Copyright 2015-2017, Institute for Systems Biology.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import MySQLdb
 import pandas as pd
 
@@ -145,9 +158,9 @@ def update_molecular_metadata_samples_list(config, table, datatype, sample_barco
     db.close()
 
 '''
-Function to update empty participant barcode values
+Function to update empty case barcode values
 '''
-def update_metadata_participants(config, table):
+def update_metadata_cases(config, table):
     update_stmt = 'UPDATE {0} set case_barcode=CONCAT("cgc_", sample_barcode) where case_barcode is NULL;'.format(table)
     print update_stmt
     db = cloudsql_connector(config)

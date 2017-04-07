@@ -45,8 +45,7 @@ def process_user_gen_files(project_id, user_project_id, study_id, bucket_name, b
 
         metadata = {
             'sample_barcode': file.get('SAMPLEBARCODE', ''),
-            'participant_barcode': file.get('PARTICIPANTBARCODE', ''),
-           # 'study_id': study_id,
+            'case_barcode': file.get('CASEBARCODE', ''),
             'project_id': study_id,
             'platform': file.get('PLATFORM', ''),
             'pipeline': file.get('PIPELINE', ''),
@@ -65,12 +64,12 @@ def process_user_gen_files(project_id, user_project_id, study_id, bucket_name, b
             data_df = cleanup_dataframe(data_df, logger=logger)
             data_df.rename(columns=column_mapping, inplace=True)
 
-            if metadata['participant_barcode'] == '':
+            if metadata['case_barcode'] == '':
                 # Duplicate samplebarcode with prepended 'cgc_'
-                data_df['participant_barcode'] = 'cgc_' + data_df['sample_barcode']
+                data_df['case_barcode'] = 'cgc_' + data_df['sample_barcode']
             else:
-                # Make sure to fill in empty participant barcodes
-                data_df[metadata['participant_barcode']][data_df['participant_barcode']==None] = 'cgc_' + data_df['sample_barcode'][data_df['participant_barcode']==None]
+                # Make sure to fill in empty case barcodes
+                data_df[metadata['case_barcode']][data_df['case_barcode']==None] = 'cgc_' + data_df['sample_barcode'][data_df['case_barcode']==None]
 
             # Generate Metadata for this file
             insert_metadata(data_df, metadata, cloudsql_tables['METADATA_DATA'], config)
@@ -84,7 +83,7 @@ def process_user_gen_files(project_id, user_project_id, study_id, bucket_name, b
             # Generate Metadata for this file
             insert_metadata(new_df, metadata, cloudsql_tables['METADATA_DATA'], config)
 
-            # TODO: Write function to check for participant barcodes, for now, we assume each file contains SampleBarcode Mapping
+            # TODO: Write function to check for case barcodes, for now, we assume each file contains SampleBarcode Mapping
             data_df = pd.merge(data_df, new_df, on='sample_barcode', how='outer')
 
     # For complete dataframe, create metadata_samples rows
@@ -193,7 +192,7 @@ if __name__ == '__main__':
     metadata = {
         'AliquotBarcode':'AliquotBarcode',
         'SampleBarcode':'SampleBarcode',
-        'ParticipantBarcode':'ParticipantBarcode',
+        'CaseBarcode':'CaseBarcode',
         'Study':'Study',
         'SampleTypeLetterCode':'SampleTypeLetterCode',
         'Platform':'Platform'

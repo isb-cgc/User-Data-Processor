@@ -58,6 +58,7 @@ def process_upload(user_data_config, success_url, failure_url):
 
         project_id = data['GOOGLE_PROJECT']
         user_project = data['USER_PROJECT']
+        # Yes, the inbound config file still uses the "STUDY" keyword.
         user_study = data['STUDY']
         bucketname = data['BUCKET']
         bq_dataset = data['BIGQUERY_DATASET']
@@ -131,9 +132,8 @@ def process_upload(user_data_config, success_url, failure_url):
 
                 metadata = {
                     'sample_barcode': file.get('SAMPLEBARCODE', ''),
-                    'participant_barcode': file.get('PARTICIPANTBARCODE', ''),
+                    'case_barcode': file.get('CASEBARCODE', ''),
                     'project_id': user_study,
-                #    'study_id': user_study,
                     'platform': file.get('PLATFORM', ''),
                     'pipeline': file.get('PIPELINE', ''),
                 }
@@ -172,9 +172,8 @@ def process_upload(user_data_config, success_url, failure_url):
 
                 metadata = {
                     'sample_barcode': file.get('SAMPLEBARCODE', ''),
-                    'participant_barcode': file.get('PARTICIPANTBARCODE', ''),
+                    'case_barcode': file.get('CASEBARCODE', ''),
                     'project_id': user_study,
-                 #   'study_id': user_study,
                     'platform': file.get('PLATFORM', ''),
                     'pipeline': file.get('PIPELINE', ''),
                 }

@@ -26,7 +26,7 @@ from isb_cgc_user_data.bigquery_etl.load import load_data_from_file
 from isb_cgc_user_data.bigquery_etl.transform.tools import cleanup_dataframe
 
 from bigquery_table_schemas import get_molecular_schema
-from metadata_updates import update_metadata_data_list, update_molecular_metadata_samples_list, insert_feature_defs_list, update_metadata_participants
+from metadata_updates import update_metadata_data_list, update_molecular_metadata_samples_list, insert_feature_defs_list, update_metadata_cases
 
 
 def parse_file(project_id, bq_dataset, bucket_name, file_data, filename,
@@ -90,7 +90,7 @@ def parse_file(project_id, bq_dataset, bucket_name, file_data, filename,
 
     # Update metadata_samples table
     update_molecular_metadata_samples_list(config, cloudsql_tables['METADATA_SAMPLES'], metadata['data_type'], sample_barcodes)
-    update_metadata_participants(config, cloudsql_tables['METADATA_SAMPLES'])
+    update_metadata_cases(config, cloudsql_tables['METADATA_SAMPLES'])
     logger.log_text('uduprocessor: Update metadata_samples table success', severity='INFO')
 
     # Generate feature names and bq_mappings
@@ -202,7 +202,7 @@ if __name__ == '__main__':
     metadata = {
         'AliquotBarcode':'AliquotBarcode',
         'SampleBarcode':'SampleBarcode',
-        'ParticipantBarcode':'ParticipantBarcode',
+        'CaseBarcode':'CaseBarcode',
         'Study':'Study',
         'SampleTypeLetterCode':'SampleTypeLetterCode',
         'Platform':'Platform'

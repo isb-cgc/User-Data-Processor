@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2015, Institute for Systems Biology.
+# Copyright 2015-2017, Institute for Systems Biology.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -48,7 +48,7 @@ if __name__ == '__main__':
     metadata = {
         'AliquotBarcode':'AliquotBarcode',
         'SampleBarcode':'SampleBarcode',
-        'ParticipantBarcode':'ParticipantBarcode',
+        'CaseBarcode':'CaseBarcode',
         'Study':'Study',
         'SampleTypeLetterCode':'SampleTypeLetterCode',
         'Platform':'Platform'

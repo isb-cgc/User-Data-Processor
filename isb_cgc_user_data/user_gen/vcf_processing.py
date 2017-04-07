@@ -209,7 +209,7 @@ if __name__ == '__main__':
     metadata = {
         'AliquotBarcode':'AliquotBarcode',
         'SampleBarcode':'SampleBarcode',
-        'ParticipantBarcode':'ParticipantBarcode',
+        'CaseBarcode':'CaseBarcode',
         'Study':'Study',
         'SampleTypeLetterCode':'SampleTypeLetterCode',
         'Platform':'Platform'
