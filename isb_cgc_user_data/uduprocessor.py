@@ -197,12 +197,20 @@ def process_upload(user_data_config, success_url, failure_url):
                                                         )
                 logger.log_text('uduprocessor: Processed low-level {0}'.format(blob_name), severity='INFO')
             logger.log_text('uduprocessor: Processed low-level', severity='INFO')
-        logger.log_text('uduprocessor registering success', severity='INFO')
-        requests.get(success_url)
+        logger.log_text('uduprocessor registering success to {0}'.format(success_url), severity='INFO')
+        r = requests.get(success_url)
+        if r.status_code < 400:
+            logger.log_text('uduprocessor registered success with return code {0}'.format(str(r.status_code)), severity='INFO')
+        else:
+            logger.log_text('uduprocessor callback failed with return code {0}'.format(str(r.status_code)), severity='WARNING')
     except:
-        logger.log_text('uduprocessor registering failure', severity='ERROR')
+        logger.log_text('uduprocessor registering failure to {0}'.format(failure_url), severity='ERROR')
         logger.log_text(traceback.format_exc(), severity='ERROR');
-        requests.get(failure_url)
+        r = requests.get(failure_url)
+        if r.status_code < 400:
+            logger.log_text('uduprocessor registered failure with return code {0}'.format(str(r.status_code)), severity='INFO')
+        else:
+            logger.log_text('uduprocessor failure callback failed with return code {0}'.format(str(r.status_code)), severity='WARNING')
 
 
 if __name__ == '__main__':
