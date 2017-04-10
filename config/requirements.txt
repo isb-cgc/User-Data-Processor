@@ -1,8 +1,8 @@
-oauth2client==3.0.0
+oauth2client
 futures
 requests
-gcloud==0.8.0
+gcloud
 chardet
 colorlog
 retrying
-google-api-python-client==1.4.2
+google-api-python-client
