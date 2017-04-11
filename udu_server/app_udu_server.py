@@ -23,6 +23,7 @@ import datetime
 import tasks_for_psq
 import psq
 import sys
+from google.gax.errors import RetryError
 
 #
 # Make sure we come up with a unique name, though clearly if this was handling
@@ -128,16 +129,36 @@ def run_udu_job():
         # this by creating a pile of no-op calls before and after to flush the message
         # queue:
         #
+
             logger.log_text('pub/sub stuffing with preamble pings', severity='INFO')
             for _ in xrange(10):
-                q.enqueue(tasks_for_psq.ping_the_pipe)
+                try:
+                    q.enqueue(tasks_for_psq.ping_the_pipe)
+                except RetryError:
+                    logger.log_text('pub/sub RETRY ERROR', severity='WARNING')
 
-            logger.log_text('pub/sub issuing processing request', severity='INFO')
-            q.enqueue(tasks_for_psq.processUserData, my_file_name, success_url, failure_url)
+            sending = True
+            try_count = 10;
+            while sending and try_count > 0:
+                try:
+                    logger.log_text('pub/sub issuing processing request', severity='INFO')
+                    q.enqueue(tasks_for_psq.processUserData, my_file_name, success_url, failure_url)
+                    sending = False
+                except RetryError:
+                    logger.log_text('pub/sub RETRY ERROR', severity='WARNING')
+                    try_count -= 1
+
+            if try_count <= 0:
+                logger.log_text('GAVE UP PUB/SUB', severity='ERROR')
+                print 'pub/sub failure'
+                return abort(400)
 
             logger.log_text('pub/sub stuffing with postscript pings', severity='INFO')
             for _ in xrange(10):
-                q.enqueue(tasks_for_psq.ping_the_pipe)
+                try:
+                    q.enqueue(tasks_for_psq.ping_the_pipe)
+                except RetryError:
+                    logger.log_text('pub/sub RETRY ERROR', severity='WARNING')
 
             resp = make_response(jsonify("processing"))
             resp.headers['Location'] = RESPONSE_LOCATION_PREFIX + my_file_name
