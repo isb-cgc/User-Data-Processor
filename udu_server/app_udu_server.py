@@ -23,6 +23,7 @@ import datetime
 import tasks_for_psq
 import psq
 import sys
+from isb_cgc_user_data.utils.build_config import read_dict
 from google.gax.errors import RetryError
 
 #
@@ -39,19 +40,6 @@ def time_stamped_unique(fname, fmt='%Y-%m-%d-%H-%M-%S-{num}_{fname}'):
         if not os.path.isfile(test_name):
             return test_name
         num += 1
-
-#
-# Do not use environment variables. We use a secrets file and load our own dictionary:
-#
-
-def read_dict(my_file_name):
-    retval = {}
-    with open(my_file_name, 'r') as f:
-        for line in f:
-            split_line = line.split('=')
-            retval[split_line[0].strip()] = split_line[1].strip()
-    return retval
-
 
 #
 # Here we read the secrets file, build the Flask server, install config
