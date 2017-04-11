@@ -179,7 +179,22 @@ def run_udu_job():
 
 @app.route('/pipePing', methods=['GET'])
 def pinger():
-    q.enqueue(tasks_for_psq.ping_the_pipe)
+    sending = True
+    try_count = 10;
+    while sending and try_count > 0:
+        try:
+            logger.log_text('pub/sub issuing ping request', severity='INFO')
+            q.enqueue(tasks_for_psq.ping_the_pipe)
+            sending = False
+        except RetryError:
+            logger.log_text('pub/sub RETRY ERROR', severity='WARNING')
+            try_count -= 1
+
+    if try_count <= 0:
+        logger.log_text('GAVE UP PING PUB/SUB', severity='ERROR')
+        print 'pub/sub failure'
+        return abort(400)
+
     return jsonify("hello")
 
 #
