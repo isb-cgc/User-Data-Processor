@@ -17,13 +17,13 @@
 # This script is run by supervisord, so we need to set working directory:
 
 UDU_HOME=/var/local/udu
-PYTH_DIST=/usr/local/lib/python2.7/dist-packages
 
 cd $UDU_HOME/User-Data-Processor/udu_server
 
 export GOOGLE_APPLICATION_CREDENTIALS=$UDU_HOME/User-Data-Processor/credentials/pubSubServiceAcct.json
 export PYTHONPATH=$UDU_HOME/User-Data-Processor
 
-# This has to be run in the directory with tasks_for_psq.py.
+# starts up Worker
 
-exec python $PYTH_DIST/psq/psqworker.py app_udu_server.q
+exec ./worker_runner.py
+

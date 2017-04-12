@@ -21,7 +21,8 @@ from flask_basicauth import BasicAuth
 from google.cloud import datastore, pubsub, logging
 import datetime
 import tasks_for_psq
-import psq
+from not_psq.task import Task
+from not_psq.queue import Queue
 import sys
 import time
 from isb_cgc_user_data.utils.build_config import read_dict
@@ -65,10 +66,6 @@ app.config['BASIC_AUTH_USERNAME'] = my_secrets['UDU_PSQ_USERNAME']
 app.config['BASIC_AUTH_PASSWORD'] = my_secrets['UDU_PSQ_PASSWORD']
 basic_auth = BasicAuth(app)
 
-# PUB/SUB QUEUE
-pubsub_client = pubsub.Client(project=PROJECT_ID)
-q = psq.Queue(pubsub_client, name=PSQ_TOPIC_NAME)
-
 # STACKDRIVER LOGGING
 
 logging_client = logging.Client()
@@ -110,31 +107,44 @@ def run_udu_job():
             my_file_name = time_stamped_unique(my_file.filename)
             my_file.save(my_file_name)
 
-
-
         #
         # WJRL 3/19/17: Google Pub/Sub behaves terribly if there is only one message
         # published to a topic. It sits for ~10 minutes, or even more. We can deal with
         # this by creating a pile of no-op calls before and after to flush the message
         # queue:
         #
+            pubsub_client = pubsub.Client(project=PROJECT_ID)
+            q = Queue(pubsub_client, name=PSQ_TOPIC_NAME)
 
             logger.log_text('pub/sub stuffing with preamble pings', severity='INFO')
             for _ in xrange(10):
                 try:
-                    q.enqueue(tasks_for_psq.ping_the_pipe)
+                    ping_task = {
+                        'method': 'ping'
+                    }
+                    q.enqueue(Task(ping_task))
                 except RetryError:
-                    pass
+                    time.sleep(2)
+                    pubsub_client = pubsub.Client(project=PROJECT_ID)
+                    q = Queue(pubsub_client, name=PSQ_TOPIC_NAME)
 
             sending = True
-            try_count = 10;
+            try_count = 10
             while sending and try_count > 0:
                 try:
                     logger.log_text('pub/sub issuing processing request', severity='INFO')
-                    q.enqueue(tasks_for_psq.processUserData, my_file_name, success_url, failure_url)
+                    user_process_task = {
+                        'method': 'buildWithParameters',
+                        'file_name': my_file_name,
+                        'success_url': success_url,
+                        'failure_url': failure_url
+                    }
+                    q.enqueue(Task(user_process_task))
                     sending = False
-                except RetryError: # DO NOT WRITE TO LOGGER: THE SERVICE ACCOUNT IS HOSED...
-                    time.sleep(30)
+                except RetryError:
+                    time.sleep(2)
+                    pubsub_client = pubsub.Client(project=PROJECT_ID)
+                    q = Queue(pubsub_client, name=PSQ_TOPIC_NAME)
                     try_count -= 1
 
             if try_count <= 0:
@@ -144,9 +154,14 @@ def run_udu_job():
             logger.log_text('pub/sub stuffing with postscript pings', severity='INFO')
             for _ in xrange(10):
                 try:
-                    q.enqueue(tasks_for_psq.ping_the_pipe)
+                    ping_task = {
+                        'method': 'ping'
+                    }
+                    q.enqueue(Task(ping_task))
                 except RetryError:
-                    pass
+                    time.sleep(2)
+                    pubsub_client = pubsub.Client(project=PROJECT_ID)
+                    q = Queue(pubsub_client, name=PSQ_TOPIC_NAME)
 
             resp = make_response(jsonify("processing"))
             resp.headers['Location'] = RESPONSE_LOCATION_PREFIX + my_file_name
@@ -167,14 +182,21 @@ def run_udu_job():
 
 @app.route('/pipePing', methods=['GET'])
 def pinger():
+    pubsub_client = pubsub.Client(project=PROJECT_ID)
+    q = Queue(pubsub_client, name=PSQ_TOPIC_NAME)
     sending = True
-    try_count = 10;
+    try_count = 10
     while sending and try_count > 0:
+        logger.log_text('processing ping request', severity='INFO')
         try:
-            logger.log_text('pub/sub issuing ping request', severity='INFO')
-            q.enqueue(tasks_for_psq.ping_the_pipe)
-            sending = False
+            ping_task = {
+                'method': 'ping'
+            }
+            q.enqueue(Task(ping_task))
         except RetryError:
+            time.sleep(2)
+            pubsub_client = pubsub.Client(project=PROJECT_ID)
+            q = Queue(pubsub_client, name=PSQ_TOPIC_NAME)
             try_count -= 1
 
     if try_count <= 0:
