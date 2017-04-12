@@ -166,6 +166,7 @@ def update_metadata_cases(config, table):
     db = cloudsql_connector(config)
     cursor = db.cursor()
     cursor.execute(update_stmt)
+    db.commit()
     cursor.close()
     db.close()
 

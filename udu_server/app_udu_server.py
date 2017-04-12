@@ -23,6 +23,7 @@ import datetime
 import tasks_for_psq
 import psq
 import sys
+import time
 from isb_cgc_user_data.utils.build_config import read_dict
 from google.gax.errors import RetryError
 
@@ -123,7 +124,7 @@ def run_udu_job():
                 try:
                     q.enqueue(tasks_for_psq.ping_the_pipe)
                 except RetryError:
-                    logger.log_text('pub/sub RETRY ERROR', severity='WARNING')
+                    pass
 
             sending = True
             try_count = 10;
@@ -132,12 +133,11 @@ def run_udu_job():
                     logger.log_text('pub/sub issuing processing request', severity='INFO')
                     q.enqueue(tasks_for_psq.processUserData, my_file_name, success_url, failure_url)
                     sending = False
-                except RetryError:
-                    logger.log_text('pub/sub RETRY ERROR', severity='WARNING')
+                except RetryError: # DO NOT WRITE TO LOGGER: THE SERVICE ACCOUNT IS HOSED...
+                    time.sleep(30)
                     try_count -= 1
 
             if try_count <= 0:
-                logger.log_text('GAVE UP PUB/SUB', severity='ERROR')
                 print 'pub/sub failure'
                 return abort(400)
 
@@ -146,7 +146,7 @@ def run_udu_job():
                 try:
                     q.enqueue(tasks_for_psq.ping_the_pipe)
                 except RetryError:
-                    logger.log_text('pub/sub RETRY ERROR', severity='WARNING')
+                    pass
 
             resp = make_response(jsonify("processing"))
             resp.headers['Location'] = RESPONSE_LOCATION_PREFIX + my_file_name
@@ -175,11 +175,9 @@ def pinger():
             q.enqueue(tasks_for_psq.ping_the_pipe)
             sending = False
         except RetryError:
-            logger.log_text('pub/sub RETRY ERROR', severity='WARNING')
             try_count -= 1
 
     if try_count <= 0:
-        logger.log_text('GAVE UP PING PUB/SUB', severity='ERROR')
         print 'pub/sub failure'
         return abort(400)
 
