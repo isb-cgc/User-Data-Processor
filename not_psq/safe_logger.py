@@ -14,6 +14,7 @@
 
 import time
 from google.cloud import logging
+from google.gax.errors import RetryError
 
 '''
 So we are seeing cases on the UDU sever where the Google default credentials expire every
