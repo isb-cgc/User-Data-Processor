@@ -88,7 +88,7 @@ rm -f ${UDU_HOME}/User-Data-Processor
 git clone https://github.com/isb-cgc/User-Data-Processor.git
 cd ${UDU_HOME}/User-Data-Processor
 #needed for development:
-git checkout NotPSQ
+#git checkout my-not-master-branch
 sudo pip install -r config/requirements.txt
 
 # Not using PSQ anymore, but need to get the google cloud stuff it used:
@@ -111,7 +111,7 @@ mv ${UDU_HOME}/*.json ${UDU_HOME}/User-Data-Processor/credentials
 chmod 400 ${UDU_HOME}/User-Data-Processor/credentials/*.json
 
 cd ${UDU_HOME}/User-Data-Processor/udu_server
-chmod u+x app_udu_server.py launchPSQ.sh launchUDU.sh runSQLProxy.sh
+chmod u+x worker_runner.py app_udu_server.py launchPSQ.sh launchUDU.sh runSQLProxy.sh
 mv ${UDU_HOME}/flask-server.crt ${UDU_HOME}/User-Data-Processor/config
 mv ${UDU_HOME}/flask-server.key ${UDU_HOME}/User-Data-Processor/config
 chmod 400 ${UDU_HOME}/User-Data-Processor/config/flask-server.*

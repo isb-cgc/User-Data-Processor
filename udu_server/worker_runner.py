@@ -63,7 +63,9 @@ def main():
                 print >> sys.stderr, 'unexpected task contents: {0}'.format(to_do)
             # Using 'is' here instead of == means no matches... because the string is built from bytes coming over the wire??
             elif to_do['method'] == 'buildWithParameters':
-                isb_cgc_user_data.uduprocessor.process_upload(to_do.file_name, to_do.success_url, to_do.failure_url)
+                print >> sys.stderr, 'Job {0} received at: {1}'.format(to_do['file_name'], str(datetime.now()))
+                isb_cgc_user_data.uduprocessor.process_upload(to_do['file_name'], to_do['success_url'], to_do['failure_url'])
+                print >> sys.stderr, 'Job {0} finished at: {1}'.format(to_do['file_name'], str(datetime.now()))
             elif to_do['method'] == 'ping':
                 print >> sys.stderr, 'Pipe pinged at: {0}'.format(str(datetime.now()))
             else:
