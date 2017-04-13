@@ -5,8 +5,6 @@ This is a repository for the user data processor. It was originally from the isb
 
 The bigquery_etl module has been copied from the isb-cgc-data-proc repository.
 
-This code is deployed on a Jenkins slave node and run by Jenkins. 
-
 ###General process of the processor:
 
 1. Read through the config file, pull out relevant bits of information and separate all the user_gen data files from the rest of the molecular datatypes.

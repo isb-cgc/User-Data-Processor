@@ -1,0 +1,8 @@
+oauth2client
+futures
+requests
+gcloud
+chardet
+colorlog
+retrying
+google-api-python-client

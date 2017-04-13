@@ -1,0 +1,9 @@
+UDU_PSQ_PROJECT_ID=your-google-project-name
+UDU_UPLOAD_FOLDER=/var/local/udu/uploads
+UDU_RESPONSE_LOCATION=https://your-chosen-fixed-internal-ip-address-matches-buildVM-script:5000/uploads
+UDU_PING_COUNT=10
+UDU_STACKDRIVER_LOG=udu_dev
+UDU_PSQ_TOPIC_NAME=udu-dev
+db_host=127.0.0.1
+db=your-database-to-use-inside-mysql
+tmp_bucket=udu-temp-bucket-dev
