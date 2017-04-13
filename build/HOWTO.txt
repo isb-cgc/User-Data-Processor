@@ -1,0 +1,5 @@
+1) Use the CloudBucketExamples directory to build a storage bucket with required config files.
+2) On your desktop, run the buildVM.sh script to build the VM.
+3) When above script is done, you are logged into the new cloud VM.
+4) Copy & paste the command line to run on the new machine.
+5) When done, service should be running. Use 'sudo supervisorctl' to manage the three services.
