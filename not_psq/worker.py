@@ -64,5 +64,4 @@ class Worker(object):
         except KeyboardInterrupt:
             pass
 
-        self.queue.cleanup()
 

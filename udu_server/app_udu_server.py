@@ -18,11 +18,11 @@ import ssl
 import os
 from flask import Flask, request, jsonify, abort, make_response
 from flask_basicauth import BasicAuth
-from google.cloud import datastore, pubsub, logging
+from google.cloud import pubsub, logging
 import datetime
-import tasks_for_psq
 from not_psq.task import Task
 from not_psq.queue import Queue
+from not_psq.safe_logger import Safe_Logger
 import sys
 import time
 from isb_cgc_user_data.utils.build_config import read_dict
@@ -68,8 +68,7 @@ basic_auth = BasicAuth(app)
 
 # STACKDRIVER LOGGING
 
-logging_client = logging.Client()
-logger = logging_client.logger(STACKDRIVER_LOG)
+logger = Safe_Logger(STACKDRIVER_LOG)
 
 #
 # This is the guts of the server. Takes UDU job requests and queues them up
@@ -117,7 +116,7 @@ def run_udu_job():
             q = Queue(pubsub_client, name=PSQ_TOPIC_NAME)
 
             logger.log_text('pub/sub stuffing with preamble pings', severity='INFO')
-            for _ in xrange(10):
+            for _ in xrange(PING_COUNT):
                 try:
                     ping_task = {
                         'method': 'ping'
@@ -152,7 +151,7 @@ def run_udu_job():
                 return abort(400)
 
             logger.log_text('pub/sub stuffing with postscript pings', severity='INFO')
-            for _ in xrange(10):
+            for _ in xrange(PING_COUNT):
                 try:
                     ping_task = {
                         'method': 'ping'
@@ -193,6 +192,7 @@ def pinger():
                 'method': 'ping'
             }
             q.enqueue(Task(ping_task))
+            sending = False
         except RetryError:
             time.sleep(2)
             pubsub_client = pubsub.Client(project=PROJECT_ID)

@@ -22,7 +22,7 @@ import user_gen.user_gen_processing
 import user_gen.molecular_processing
 import user_gen.low_level_processing
 import user_gen.vcf_processing
-from google.cloud import logging
+from not_psq.safe_logger import Safe_Logger
 from isb_cgc_user_data.utils.build_config import read_dict
 
 #
@@ -37,8 +37,7 @@ STACKDRIVER_LOG = my_config['UDU_STACKDRIVER_LOG']
 
 # STACKDRIVER LOGGING
 
-logging_client = logging.Client()
-logger = logging_client.logger(STACKDRIVER_LOG)
+logger = Safe_Logger(STACKDRIVER_LOG)
 
 def generate_bq_schema(columns):
     obj = []

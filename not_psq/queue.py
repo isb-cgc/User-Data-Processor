@@ -32,9 +32,9 @@
 # limitations under the License.
 
 from gcloud import pubsub
-#import google.cloud.exceptions
 from .task import Task
 import sys
+import json
 
 PUBSUB_OBJECT_PREFIX = 'psq'
 
@@ -105,7 +105,7 @@ class Queue(object):
         return subscription
 
     def enqueue(self, task):
-        self.topic.publish(task.getMsg())
+        self.topic.publish(json.dumps(task.getMsg()))
 
     def dequeue(self):
         if not self.subscription:
@@ -120,7 +120,7 @@ class Queue(object):
 
         tasks = []
         for x in messages:
-            task = Task(x[1].data, x[1].message_id)
+            task = Task(json.loads(x[1].data), x[1].message_id)
             tasks.append(task)
 
         self.subscription.acknowledge(ack_ids)
