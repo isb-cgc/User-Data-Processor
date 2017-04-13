@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import sys
 import time
 from datetime import datetime
 from gcloud import pubsub
@@ -36,7 +37,7 @@ PSQ_TOPIC_NAME = my_config['UDU_PSQ_TOPIC_NAME']
 
 
 def main():
-    print ('Not PSQ has Started for {0}'.format(PSQ_TOPIC_NAME))
+    print >> sys.stderr, 'Not PSQ has Started for {0}'.format(PSQ_TOPIC_NAME)
     pubsub_client = pubsub.Client(project=PROJECT_ID)
     q = Queue(pubsub_client, name=PSQ_TOPIC_NAME)
     worker = Worker(q)
@@ -59,14 +60,14 @@ def main():
         for task in tasks:
             to_do = task.getMsg()
             if 'method' not in to_do:
-                print ('unexpected task contents: {0}'.format(to_do))
+                print >> sys.stderr, 'unexpected task contents: {0}'.format(to_do)
             # Using 'is' here instead of == means no matches... because the string is built from bytes coming over the wire??
             elif to_do['method'] == 'buildWithParameters':
                 isb_cgc_user_data.uduprocessor.process_upload(to_do.file_name, to_do.success_url, to_do.failure_url)
             elif to_do['method'] == 'ping':
-                print ('Pipe pinged at: {0}'.format(str(datetime.now())))
+                print >> sys.stderr, 'Pipe pinged at: {0}'.format(str(datetime.now()))
             else:
-                print ('unexpected method call: {0} at {1}'.format(to_do['method'], str(datetime.now())))
+                print >> sys.stderr, 'unexpected method call: {0} at {1}'.format(to_do['method'], str(datetime.now()))
 
 if __name__ == '__main__':
     main()
