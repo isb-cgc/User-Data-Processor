@@ -17,6 +17,7 @@ import argparse
 import json
 import requests
 import traceback
+import os
 
 import user_gen.user_gen_processing
 import user_gen.molecular_processing
@@ -24,6 +25,7 @@ import user_gen.low_level_processing
 import user_gen.vcf_processing
 from not_psq.safe_logger import Safe_Logger
 from isb_cgc_user_data.utils.build_config import read_dict
+from isb_cgc_user_data.utils.processed_file import processed_name
 
 #
 # Here we read the config and secret file
@@ -49,8 +51,34 @@ def generate_bq_schema(columns):
 
 def process_upload(user_data_config, success_url, failure_url):
     try:
+        #
+        # OK, Pub/Sub does NOT guarantee that a message gets delivered ONLY once. It may come in > 1 time.
+        # It might also be possible that the WebApp sends us the same job request twice, though this should
+        # never happen.
+        # So we need to flag the job is being/has been handled. Right now, with ony one worker handling
+        # requests, we can get away with moving the config file to a new location. Once we set up multiple
+        # workers, the operation will need to be more atomic (e.g. an atomic database entry).
+        #
+
+        processed = processed_name(user_data_config)
+        have_processed = os.path.isfile(processed)
+        have_pending = os.path.isfile(user_data_config)
+
+        if have_processed:
+            if have_pending:
+                logger.log_text('uduprocessor unexpected duplicate request from web app ignored {0}'.format(user_data_config),
+                                severity='ERROR')
+            else:
+                logger.log_text('uduprocessor duplicate pubsub message ignored {0}'.format(user_data_config),
+                                severity='WARNING')
+            return
+
         logger.log_text('uduprocessor handling request', severity='INFO')
-        configs = open(user_data_config).read()
+        # Move the processed file:
+        os.rename(user_data_config, processed)
+        # This construct closes the file ASAP:
+        with open(processed, 'r') as f:
+            configs = f.read()
         logger.log_text('uduprocessor: configs: {0}'.format(user_data_config), severity='INFO')
         data = json.loads(configs)
         logger.log_text('uduprocessor: data: {0}'.format(data), severity='INFO')

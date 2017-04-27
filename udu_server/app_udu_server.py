@@ -26,6 +26,7 @@ from not_psq.safe_logger import Safe_Logger
 import sys
 import time
 from isb_cgc_user_data.utils.build_config import read_dict
+from isb_cgc_user_data.utils.processed_file import processed_name
 from google.gax.errors import RetryError
 
 #
@@ -163,7 +164,7 @@ def run_udu_job():
                     q = Queue(pubsub_client, name=PSQ_TOPIC_NAME)
 
             resp = make_response(jsonify("processing"))
-            resp.headers['Location'] = RESPONSE_LOCATION_PREFIX + my_file_name
+            resp.headers['Location'] = RESPONSE_LOCATION_PREFIX + processed_name(my_file_name)
             logger.log_text('response issued to caller', severity='INFO')
             return resp
         else:
