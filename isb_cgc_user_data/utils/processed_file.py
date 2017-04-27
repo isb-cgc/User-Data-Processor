@@ -16,4 +16,4 @@
 #
 
 def processed_name(my_file_name):
-    return my_file_name.replace('_config', 'proc_config')
+    return my_file_name.replace('_config', '_proc_config')
