@@ -18,8 +18,12 @@
 
 UDU_OWN=uduproc
 UDU_HOME=/var/local/udu
+BUCK_SUFF=
+STAGE=dev
+UCSTAGE=Dev
 # point this at your own storage bucket for config files:
-UDU_DEPLOY_BUCKET=udu-deployment-files/dev
+UDU_DEPLOY_BUCKET=udu-deployment-files${BUCK_SUFF}/${STAGE}
+
 
 # Update the VM:
 
@@ -107,7 +111,9 @@ mv ${UDU_HOME}/startupConfig.sh ${UDU_HOME}/User-Data-Processor/config/startupCo
 mv ${UDU_HOME}/udu_config.txt ${UDU_HOME}/User-Data-Processor/config/udu_config.txt
 mv ${UDU_HOME}/udu_secrets.txt ${UDU_HOME}/User-Data-Processor/config/udu_secrets.txt
 chmod 400 ${UDU_HOME}/User-Data-Processor/config/udu_secrets.txt
-mv ${UDU_HOME}/*.json ${UDU_HOME}/User-Data-Processor/credentials
+mv ${UDU_HOME}/pubSubServiceAcct${UCSTAGE}.json ${UDU_HOME}/User-Data-Processor/credentials/pubSubServiceAcct.json
+mv ${UDU_HOME}/sqlServiceAcct${UCSTAGE}.json ${UDU_HOME}/User-Data-Processor/credentials/sqlServiceAcct.json
+mv ${UDU_HOME}/bucketAndBiqQueryServiceAcct${UCSTAGE}.json ${UDU_HOME}/User-Data-Processor/credentials/bucketAndBiqQueryServiceAcct.json
 chmod 400 ${UDU_HOME}/User-Data-Processor/credentials/*.json
 
 cd ${UDU_HOME}/User-Data-Processor/udu_server
