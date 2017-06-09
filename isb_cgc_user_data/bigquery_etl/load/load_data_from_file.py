@@ -36,6 +36,7 @@ import os
 from googleapiclient import discovery
 from oauth2client.client import GoogleCredentials
 from isb_cgc_user_data.utils import build_config
+from isb_cgc_user_data.utils.error_handling import UduException
 
 
 # [START load_table]
@@ -89,7 +90,7 @@ def load_table(bigquery, project_id, dataset_id, table_name, source_schema,
 
 
 # [START poll_job]
-def poll_job(bigquery, job):
+def poll_job(bigquery, job, logger=None):
     """Waits for a job to complete."""
 
     print('Waiting for job to finish...')
@@ -100,16 +101,21 @@ def poll_job(bigquery, job):
 
     while True:
         result = request.execute(num_retries=2)
-
+        # This will raise exceptions if we have parsing errors (e.g. cannot convert to a float)
         if 'errors' in result['status']:
-            print ('Error loading table:')
-            raise RuntimeError(json.dumps(result['status']['errors'], indent=4))
-            return
+            udu_ex = UduException(json.dumps(result['status']['errors']))
+            if logger:
+                logger.log_text("Error loading BQtable: {0}".format(str(udu_ex.message)), severity='ERROR')
+            raise udu_ex
 
         if result['status']['state'] == 'DONE':
             if 'errorResult' in result['status']:
-                raise RuntimeError(result['status']['errorResult'])
-            print('Job complete.')
+                udu_ex = UduException(str(result['status']['errorResult']))
+                if logger:
+                    logger.log_text("Error loading BQtable upon completion: {0}".format(str(udu_ex.message)), severity='ERROR')
+                raise udu_ex
+            if logger:
+                logger.log_text("BQtable job complete", severity='INFO')
             return
 
         time.sleep(1)
@@ -118,7 +124,8 @@ def poll_job(bigquery, job):
 
 # [START run]
 def run(config, project_id, dataset_id, table_name, schema_file, data_path,
-         source_format='NEWLINE_DELIMITED_JSON', write_disposition='WRITE_EMPTY', num_retries=5, poll_interval=1, is_schema_file=True):
+         source_format='NEWLINE_DELIMITED_JSON', write_disposition='WRITE_EMPTY',
+         num_retries=5, poll_interval=1, is_schema_file=True, logger=None):
     # [START build_service]
     # Grab the application's default credentials from the environment.
 
@@ -150,7 +157,7 @@ def run(config, project_id, dataset_id, table_name, schema_file, data_path,
         write_disposition
     )
 
-    poll_job(bigquery, job)
+    poll_job(bigquery, job, logger)
     
 # [END run]
 

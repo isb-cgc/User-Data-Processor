@@ -27,9 +27,10 @@ from isb_cgc_user_data.bigquery_etl.transform.tools import cleanup_dataframe
 
 from metadata_updates import update_metadata_data_list, insert_metadata_samples, insert_feature_defs_list
 
-def process_user_gen_files(project_id, user_project_id, study_id, bucket_name, bq_dataset, cloudsql_tables, files, config, logger):
+def process_user_gen_files(project_id, user_project_id, study_id, bucket_name, bq_dataset, cloudsql_tables, files, config, logger=None):
 
-    logger.log_text('uduprocessor: Begin processing user_gen files.', severity='INFO')
+    if logger:
+        logger.log_text('uduprocessor: Begin processing user_gen files.', severity='INFO')
 
     # connect to the cloud bucket
     gcs = GcsConnector(project_id, bucket_name, config, logger=logger)
@@ -87,7 +88,8 @@ def process_user_gen_files(project_id, user_project_id, study_id, bucket_name, b
             data_df = pd.merge(data_df, new_df, on='sample_barcode', how='outer')
 
     # For complete dataframe, create metadata_samples rows
-    logger.log_text('uduprocessor: Inserting into data into {0}.'.format(cloudsql_tables['METADATA_SAMPLES'], severity='INFO'))
+    if logger:
+        logger.log_text('uduprocessor: Inserting into data into {0}.'.format(cloudsql_tables['METADATA_SAMPLES'], severity='INFO'))
     data_df = cleanup_dataframe(data_df, logger=logger)
     data_df['has_mrna'] = 0
     data_df['has_mirna'] = 0
@@ -114,7 +116,8 @@ def process_user_gen_files(project_id, user_project_id, study_id, bucket_name, b
         source_path,
         source_format='NEWLINE_DELIMITED_JSON',
         write_disposition='WRITE_APPEND',
-        is_schema_file=False)
+        is_schema_file=False,
+        logger=logger)
 
     # Generate feature_defs
     feature_defs = generate_feature_defs(study_id, project_id, bq_dataset, table_name, schema)
@@ -123,7 +126,8 @@ def process_user_gen_files(project_id, user_project_id, study_id, bucket_name, b
     insert_feature_defs_list(config, cloudsql_tables['FEATURE_DEFS'], feature_defs)
 
     # Delete temporary files
-    logger.log_text('uduprocessor: Deleting temporary file {0}'.format(temp_outfile), severity='INFO')
+    if logger:
+        logger.log_text('uduprocessor: Deleting temporary file {0}'.format(temp_outfile), severity='INFO')
     gcs = GcsConnector(project_id, tmp_bucket, config, logger=logger)
     gcs.delete_blob(temp_outfile)
 

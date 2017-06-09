@@ -14,11 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Extract Utils
-"""
 
 import json
 import pandas as pd
+from isb_cgc_user_data.utils.error_handling import UduException
 
 def convert_file_to_dataframe(filepath_or_buffer, sep="\t", skiprows=0, rollover=False, nrows=None, header=None, logger=None):
     """does some required data cleaning and
@@ -33,13 +32,15 @@ def convert_file_to_dataframe(filepath_or_buffer, sep="\t", skiprows=0, rollover
         na_values = ['none', 'None', 'NONE', 'null', 'Null', 'NULL', ' ', 'NA', '__UNKNOWN__', '?']
 
         # read the table/file
+        # EXCEPTION THROWN: TOO MANY FIELDS THROWS CParserError e.g. "Expected 207 fields in line 3, saw 208"
+        # EXCEPTION THROWN: EMPTY FILE THROWS CParserError e.g. "Passed header=0 but only 0 lines in file"
         data_df = pd.read_table(filepath_or_buffer, sep=sep, skiprows=skiprows, lineterminator='\n',
                                 comment='#', na_values=na_values, dtype='object', nrows=nrows, header=header)
 
     except Exception as exp:
         if logger:
             logger.log_text("Read Table Error: {0}".format(str(exp.message)), severity='ERROR')
-        raise
+        raise UduException(exp.message)
 
     filepath_or_buffer.close() # close  StringIO
 
