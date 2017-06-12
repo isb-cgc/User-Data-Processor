@@ -67,13 +67,13 @@ mv ${UDU_GIT_HOME_TMP}/udu_server/cloud_sql_proxy ${UDU_GIT_HOME}/udu_server/clo
 # Start everybody up
 #
 
-supervisorctl start all
+sudo supervisorctl start all
 
 #
 # Toss the old stuff
 #
 
-# rm -rf ${UDU_GIT_HOME_TMP}
+rm -rf ${UDU_GIT_HOME_TMP}
 
 echo "done!"
 echo "Manage services with: sudo supervisorctl"

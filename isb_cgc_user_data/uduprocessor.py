@@ -245,13 +245,13 @@ def process_upload(user_data_config, success_url, failure_url):
         job_status = 'failure'
         log_severity = 'ERROR'
         logger.log_text(traceback.format_exc(), severity='ERROR');
-        callback_url = '{0}&errmsg={1}'.format(failure_url, urllib.parse.quote(uexp.message))
+        callback_url = '{0}&errmsg={1}'.format(failure_url, urllib.quote(uexp.message))
 
     except Exception as ex:
         job_status = 'failure'
         log_severity = 'ERROR'
         logger.log_text(traceback.format_exc(), severity='ERROR');
-        ready_msg = urllib.parse.quote('Unexpected error:{0}'.format(ex.message))
+        ready_msg = urllib.quote('Unexpected error loading data')
         callback_url = '{0}&errmsg={1}'.format(failure_url, ready_msg);
 
     # Let the WebApp know what happened to the job.

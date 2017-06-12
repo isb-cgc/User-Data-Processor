@@ -33,6 +33,7 @@ import json
 import time
 import uuid
 import os
+import re
 from googleapiclient import discovery
 from oauth2client.client import GoogleCredentials
 from isb_cgc_user_data.utils import build_config
@@ -95,30 +96,44 @@ def poll_job(bigquery, job, logger=None):
 
     print('Waiting for job to finish...')
 
-    request = bigquery.jobs().get(
-        projectId=job['jobReference']['projectId'],
-        jobId=job['jobReference']['jobId'])
+    try:
+        request = bigquery.jobs().get(
+            projectId=job['jobReference']['projectId'],
+            jobId=job['jobReference']['jobId'])
 
-    while True:
-        result = request.execute(num_retries=2)
-        # This will raise exceptions if we have parsing errors (e.g. cannot convert to a float)
-        if 'errors' in result['status']:
-            udu_ex = UduException(json.dumps(result['status']['errors']))
-            if logger:
-                logger.log_text("Error loading BQtable: {0}".format(str(udu_ex.message)), severity='ERROR')
-            raise udu_ex
-
-        if result['status']['state'] == 'DONE':
-            if 'errorResult' in result['status']:
-                udu_ex = UduException(str(result['status']['errorResult']))
+        while True:
+            result = request.execute(num_retries=2)
+            # This will raise exceptions if we have parsing errors (e.g. cannot convert to a float)
+            if 'errors' in result['status']:
+                udu_ex = UduException(json.dumps(result['status']['errors']))
                 if logger:
-                    logger.log_text("Error loading BQtable upon completion: {0}".format(str(udu_ex.message)), severity='ERROR')
+                    logger.log_text("Error loading BQtable: {0}".format(str(udu_ex.message)), severity='ERROR')
                 raise udu_ex
-            if logger:
-                logger.log_text("BQtable job complete", severity='INFO')
-            return
 
-        time.sleep(1)
+            if result['status']['state'] == 'DONE':
+                if 'errorResult' in result['status']:
+                    udu_ex = UduException(str(result['status']['errorResult']))
+                    if logger:
+                        logger.log_text("Error loading BQtable upon completion: {0}".format(str(udu_ex.message)), severity='ERROR')
+                    raise udu_ex
+                if logger:
+                    logger.log_text("BQtable job complete", severity='INFO')
+                return
+
+            time.sleep(1)
+
+    except Exception as exp:
+        if logger:
+            logger.log_text("BQ Polling Error: {0}".format(str(exp.message)), severity='ERROR')
+
+        pattern = re.compile('^.*(JSON parsing error[^,]*),.*$')
+        match = pattern.match(str(exp.message))
+        err_guts = match.group(1)
+        if err_guts:
+            user_message = "Error loading file into BigQuery: {0}. ".format(err_guts[:400])
+        else:
+            user_message = "Parsing error loading file into BigQuery."
+        raise UduException(user_message)
 # [END poll_job]
 
 
@@ -145,17 +160,30 @@ def run(config, project_id, dataset_id, table_name, schema_file, data_path,
     else:
         schema = schema_file
 
-    job = load_table(
-        bigquery,
-        project_id,
-        dataset_id,
-        table_name,
-        schema,
-        data_path,
-        source_format,
-        num_retries,
-        write_disposition
-    )
+    try:
+        job = load_table(
+            bigquery,
+            project_id,
+            dataset_id,
+            table_name,
+            schema,
+            data_path,
+            source_format,
+            num_retries,
+            write_disposition
+        )
+    except Exception as exp:
+        if logger:
+            logger.log_text("BQ Load Table Error: {0}".format(str(exp.message)), severity='ERROR')
+
+        pattern = re.compile('^.*(JSON parsing error[^,]*),.*$')
+        match = pattern.match(str(exp.message))
+        err_guts = match.group(1)
+        if err_guts:
+            user_message = "Error loading file into BigQuery: {0}. ".format(err_guts[:400])
+        else:
+            user_message = "Parsing error loading file into BigQuery."
+        raise UduException(user_message)
 
     poll_job(bigquery, job, logger)
     
