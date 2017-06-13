@@ -20,11 +20,12 @@ from isb_cgc_user_data.utils.error_handling import UduException
 # duplicate column headings:
 #
 
-def reject_dup_col_pre_dataframe(filepath_or_buffer, logger, name):
-    first = None
-    with open(filepath_or_buffer, 'rb') as tsvin:
-        tsvin = csv.reader(tsvin, delimiter='\t')
-        first = next(tsvin)
+def reject_dup_col_pre_dataframe(buffer, logger, name):
+
+    tsvin = csv.reader(buffer, delimiter='\t')
+    first = next(tsvin)
+    buffer.seek(0)
+
     if not first:
         if logger:
             logger.log_text('uduprocessor: file empty', severity='INFO')
