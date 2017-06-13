@@ -123,19 +123,7 @@ def poll_job(bigquery, job, logger=None):
             time.sleep(1)
 
     except Exception as exp:
-        if logger:
-            logger.log_text("BQ Polling Error: {0}".format(str(exp.message)), severity='ERROR')
-
-        pattern = re.compile('^.*JSON parsing error[^:]*:[^A-Za-z]*([^,]*)$')
-        match = pattern.match(str(exp.message))
-        err_guts = match.group(1)
-        err_guts = err_guts.replace('"', '')
-        err_guts = err_guts.replace("'", "")
-        if err_guts:
-            user_message = "Error loading file into BigQuery: {0}. ".format(err_guts[:400])
-        else:
-            user_message = "Parsing error loading file into BigQuery."
-        raise UduException(user_message)
+        handle_bq_exception(exp, logger)
 # [END poll_job]
 
 
@@ -175,23 +163,30 @@ def run(config, project_id, dataset_id, table_name, schema_file, data_path,
             write_disposition
         )
     except Exception as exp:
-        if logger:
-            logger.log_text("BQ Load Table Error: {0}".format(str(exp.message)), severity='ERROR')
-
-        pattern = re.compile('^.*JSON parsing error[^:]*:[^A-Za-z]*([^,]*)$')
-        match = pattern.match(str(exp.message))
-        err_guts = match.group(1)
-        err_guts = err_guts.replace('"', '')
-        err_guts = err_guts.replace("'", "")
-        if err_guts:
-            user_message = "Error loading file into BigQuery: {0}. ".format(err_guts[:400])
-        else:
-            user_message = "Parsing error loading file into BigQuery."
-        raise UduException(user_message)
+        handle_bq_exception(exp, logger)
 
     poll_job(bigquery, job, logger)
     
 # [END run]
+
+
+def handle_bq_exception(exp, logger):
+    if logger:
+        logger.log_text("BQ Polling Error: {0}".format(str(exp.message)), severity='ERROR')
+
+    if "Could not convert value to double" in str(exp.message):
+        value = ""
+        pattern = re.compile('Value: ([^"]*)')
+        match = pattern.match(str(exp.message))
+        if match:
+            value = match.group(1)
+            user_message = "Error loading file into BigQuery. Non-numeric value found: {0}. ".format(
+                str(value)[:400])
+        else:
+            user_message = "Error loading file into BigQuery. Non-numeric value found:"
+    else:
+        user_message = "Parsing error loading file into BigQuery."
+    raise UduException(user_message)
 
 
 # [START main]
