@@ -28,7 +28,7 @@ from isb_cgc_user_data.bigquery_etl.transform.tools import cleanup_dataframe
 from bigquery_table_schemas import get_molecular_schema
 from metadata_updates import update_metadata_data_list, update_molecular_metadata_samples_list, insert_feature_defs_list, update_metadata_cases
 from isb_cgc_user_data.utils.error_handling import UduException
-from isb_cgc_user_data.utils.check_dataframe_dups import reject_row_duplicate_or_blank, reject_col_duplicate_or_blank, find_key_column
+from isb_cgc_user_data.utils.check_dataframe_dups import reject_row_duplicate_or_blank, reject_dup_col_pre_dataframe, find_key_column
 
 def parse_file(project_id, bq_dataset, bucket_name, file_data, filename,
                outfilename, metadata, cloudsql_tables, config, logger=None):
@@ -47,6 +47,11 @@ def parse_file(project_id, bq_dataset, bucket_name, file_data, filename,
     if logger:
         logger.log_text('uduprocessor: download_blob_to_file success', severity='INFO')
 
+    # Pandas just appends _n to duplicate header keys if data in column is different (i.e. not
+    # a duplicate column. Nope! We flag it as an error:
+
+    reject_dup_col_pre_dataframe(filebuffer, logger, 'barcode')
+
     # convert blob into dataframe. We may get a parsing exception out of this if e.g. a
     # row has too many fields:
     data_df = convert_file_to_dataframe(filebuffer, skiprows=0, header=0, logger=logger)
@@ -56,12 +61,11 @@ def parse_file(project_id, bq_dataset, bucket_name, file_data, filename,
     # Get basic column information depending on datatype
     column_map = get_column_mapping(metadata['data_type'])
 
-    # Reject duplicate and blank features and barcodes. Do before cleanup, because blanks
+    # Reject duplicate and blank features. Do before cleanup, because blanks
     # will be converted to NANs:
 
     id_col = find_key_column(data_df, column_map, logger, 'ID')
     reject_row_duplicate_or_blank(data_df, logger, 'feature', id_col)
-    reject_col_duplicate_or_blank(data_df, logger, 'barcode')
 
     # clean-up dataframe. We can get a parsing exception out of this if the table has
     # only a header, and no rows of data:

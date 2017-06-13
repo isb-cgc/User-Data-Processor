@@ -11,7 +11,42 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import csv
 from isb_cgc_user_data.utils.error_handling import UduException
+
+
+#
+# Do column checking before pandas gets a chance, since it appends _x to
+# duplicate column headings:
+#
+
+def reject_dup_col_pre_dataframe(filepath_or_buffer, logger, name):
+    first = None
+    with open(filepath_or_buffer, 'rb') as tsvin:
+        tsvin = csv.reader(tsvin, delimiter='\t')
+        first = next(tsvin)
+    if not first:
+        if logger:
+            logger.log_text('uduprocessor: file empty', severity='INFO')
+        user_message = "File was empty "
+        raise UduException(user_message)
+
+    barcode_counts = {}
+
+    for i in first:
+        if not i.strip():
+            if logger:
+                logger.log_text('uduprocessor: empty {0}'.format(name), severity='INFO')
+            user_message = "Empty {0} detected in columns, processing cannot continue".format(name)
+            raise UduException(user_message)
+
+        cur_count = barcode_counts.get(i, 0)
+        if cur_count > 0:
+            if logger:
+                logger.log_text('uduprocessor: duplicated {0}'.format(name), severity='INFO')
+            user_message = "Duplicated {0} detected in columns, processing cannot continue: {1}".format(name, str(i))
+            raise UduException(user_message)
+        barcode_counts[i] = cur_count + 1
 
 #
 # Find the ID column:
@@ -28,9 +63,9 @@ def find_key_column(data_df, column_map, logger, key):
         logger.log_text('uduprocessor: no key column found', severity='INFO')
     for tkey, value in column_map.iteritems():
         if value == key:
-            needed = tkey;
+            needed = tkey
             break
-    user_message = 'No key column named {0} found, processing cannot continue'.format(needed);
+    user_message = 'No key column named {0} found, processing cannot continue'.format(needed)
     raise UduException(user_message)
 
 #
@@ -46,14 +81,14 @@ def reject_row_duplicate_or_blank(data_df, logger, name, id_col):
         if not feat.strip():
             if logger:
                 logger.log_text('uduprocessor: empty {0}'.format(name), severity='INFO')
-            user_message = "Empty {0} detected in rows, processing cannot continue".format(name);
+            user_message = "Empty {0} detected in rows, processing cannot continue".format(name)
             raise UduException(user_message)
 
         cur_count = feature_counts.get(feat, 0)
         if cur_count > 0:
             if logger:
                 logger.log_text('uduprocessor: duplicated {0}'.format(name), severity='INFO')
-            user_message = "Duplicated {0} detected in rows, processing cannot continue: {1}".format(name, str(feat));
+            user_message = "Duplicated {0} detected in rows, processing cannot continue: {1}".format(name, str(feat))
             raise UduException(user_message)
         feature_counts[feat] = cur_count + 1
 
@@ -70,7 +105,7 @@ def reject_col_duplicate_or_blank(data_df, logger, name):
         if not i.strip():
             if logger:
                 logger.log_text('uduprocessor: empty {0}'.format(name), severity='INFO')
-            user_message = "Empty {0} detected in rows, processing cannot continue".format(name);
+            user_message = "Empty {0} detected in columns, processing cannot continue".format(name);
             raise UduException(user_message)
 
         cur_count = barcode_counts.get(i, 0)
