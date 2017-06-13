@@ -42,11 +42,14 @@ def convert_file_to_dataframe(filepath_or_buffer, sep="\t", skiprows=0, rollover
         if logger:
             logger.log_text("Read Table Error: {0}".format(str(exp.message)), severity='ERROR')
 
-        pattern = re.compile('^.*(CParserError.*)$')
+        pattern = re.compile('^.* error: (.*)$')
         match = pattern.match(str(exp.message))
-        err_guts = match.group(1)
-        if err_guts:
-            user_message = "Error parsing file: {0}. ".format(err_guts[:400])
+        if match:
+            err_guts = match.group(1)
+            if err_guts:
+                user_message = "Error parsing file: {0}. ".format(err_guts[:400])
+            else:
+                user_message = "Parsing error reading file."
         else:
             user_message = "Parsing error reading file."
         raise UduException(user_message)

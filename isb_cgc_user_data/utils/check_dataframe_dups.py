@@ -14,20 +14,46 @@
 from isb_cgc_user_data.utils.error_handling import UduException
 
 #
+# Find the ID column:
+#
+
+def find_key_column(data_df, column_map, logger, key):
+
+    count = 0
+    for i, j in data_df.iteritems():
+        if (i in column_map.keys()) and (column_map[i] == key):
+            return count
+        count += 1
+    if logger:
+        logger.log_text('uduprocessor: no key column found', severity='INFO')
+    for key, value in column_map.iteritems():
+        if value == key:
+            needed = key;
+            break
+    user_message = 'No key column named {0} found, processing cannot continue'.format(needed);
+    raise UduException(user_message)
+
+#
 # Reject duplicate features:
 #
 
-def reject_row_duplicate_features(data_df, logger, name):
+def reject_row_duplicate_or_blank(data_df, logger, name, id_col):
 
     feature_counts = {}
 
     for row_index, row in data_df.iterrows():
-        feat = row[0]
+        feat = row[id_col]
+        if not feat.strip():
+            if logger:
+                logger.log_text('uduprocessor: empty {0}'.format(name), severity='INFO')
+            user_message = "Empty {0} detected in rows, processing cannot continue".format(name);
+            raise UduException(user_message)
+
         cur_count = feature_counts.get(feat, 0)
         if cur_count > 0:
             if logger:
                 logger.log_text('uduprocessor: duplicated {0}'.format(name), severity='INFO')
-            user_message = "Upload stopped due to duplicated {0}: {1}".format(name, str(feat));
+            user_message = "Duplicated {0} detected in rows, processing cannot continue: {1}".format(name, str(feat));
             raise UduException(user_message)
         feature_counts[feat] = cur_count + 1
 
@@ -35,16 +61,22 @@ def reject_row_duplicate_features(data_df, logger, name):
 # Reject duplicate barcodes:
 #
 
-def reject_col_duplicate_barcodes(data_df, logger, name):
+def reject_col_duplicate_or_blank(data_df, logger, name):
 
     barcode_counts = {}
 
     for i, j in data_df.iteritems():
 
+        if not i.strip():
+            if logger:
+                logger.log_text('uduprocessor: empty {0}'.format(name), severity='INFO')
+            user_message = "Empty {0} detected in rows, processing cannot continue".format(name);
+            raise UduException(user_message)
+
         cur_count = barcode_counts.get(i, 0)
         if cur_count > 0:
             if logger:
                 logger.log_text('uduprocessor: duplicated {0}'.format(name), severity='INFO')
-            user_message = "Upload stopped due to duplicated {0}: {1}".format(name, str(i));
+            user_message = "Duplicated {0} detected in columns, processing cannot continue: {1}".format(name, str(i));
             raise UduException(user_message)
         barcode_counts[i] = cur_count + 1

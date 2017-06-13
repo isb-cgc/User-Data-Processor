@@ -28,9 +28,7 @@ from isb_cgc_user_data.bigquery_etl.transform.tools import cleanup_dataframe
 from bigquery_table_schemas import get_molecular_schema
 from metadata_updates import update_metadata_data_list, update_molecular_metadata_samples_list, insert_feature_defs_list, update_metadata_cases
 from isb_cgc_user_data.utils.error_handling import UduException
-from isb_cgc_user_data.utils.check_dataframe_dups import reject_row_duplicate_features
-from isb_cgc_user_data.utils.check_dataframe_dups import reject_col_duplicate_barcodes
-
+from isb_cgc_user_data.utils.check_dataframe_dups import reject_row_duplicate_or_blank, reject_col_duplicate_or_blank, find_key_column
 
 def parse_file(project_id, bq_dataset, bucket_name, file_data, filename,
                outfilename, metadata, cloudsql_tables, config, logger=None):
@@ -55,6 +53,16 @@ def parse_file(project_id, bq_dataset, bucket_name, file_data, filename,
     if logger:
         logger.log_text('uduprocessor: convert_file_to_dataframe success', severity='INFO')
 
+    # Get basic column information depending on datatype
+    column_map = get_column_mapping(metadata['data_type'])
+
+    # Reject duplicate and blank features and barcodes. Do before cleanup, because blanks
+    # will be converted to NANs:
+
+    id_col = find_key_column(data_df, column_map, logger, 'ID')
+    reject_row_duplicate_or_blank(data_df, logger, 'feature', id_col)
+    reject_col_duplicate_or_blank(data_df, logger, 'barcode')
+
     # clean-up dataframe. We can get a parsing exception out of this if the table has
     # only a header, and no rows of data:
     data_df = cleanup_dataframe(data_df, logger=logger)
@@ -63,17 +71,6 @@ def parse_file(project_id, bq_dataset, bucket_name, file_data, filename,
     new_df_data = []
 
     map_values = {}
-
-    # Get basic column information depending on datatype
-    column_map = get_column_mapping(metadata['data_type'])
-
-    # Reject duplicate features:
-
-    reject_row_duplicate_features(data_df, logger, 'feature')
-
-    # Reject duplicate barcodes:
-
-    reject_col_duplicate_barcodes(data_df, logger, 'barcode')
 
     # Column headers are sample ids. Glue on new columns with metadata here as well.
     for i, j in data_df.iteritems():

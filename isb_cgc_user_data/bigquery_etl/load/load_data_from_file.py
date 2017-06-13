@@ -126,9 +126,11 @@ def poll_job(bigquery, job, logger=None):
         if logger:
             logger.log_text("BQ Polling Error: {0}".format(str(exp.message)), severity='ERROR')
 
-        pattern = re.compile('^.*(JSON parsing error[^,]*),.*$')
+        pattern = re.compile('^.*JSON parsing error[^:]*:[^A-Za-z]*([^,]*)$')
         match = pattern.match(str(exp.message))
         err_guts = match.group(1)
+        err_guts = err_guts.replace('"', '')
+        err_guts = err_guts.replace("'", "")
         if err_guts:
             user_message = "Error loading file into BigQuery: {0}. ".format(err_guts[:400])
         else:
@@ -176,9 +178,11 @@ def run(config, project_id, dataset_id, table_name, schema_file, data_path,
         if logger:
             logger.log_text("BQ Load Table Error: {0}".format(str(exp.message)), severity='ERROR')
 
-        pattern = re.compile('^.*(JSON parsing error[^,]*),.*$')
+        pattern = re.compile('^.*JSON parsing error[^:]*:[^A-Za-z]*([^,]*)$')
         match = pattern.match(str(exp.message))
         err_guts = match.group(1)
+        err_guts = err_guts.replace('"', '')
+        err_guts = err_guts.replace("'", "")
         if err_guts:
             user_message = "Error loading file into BigQuery: {0}. ".format(err_guts[:400])
         else:
