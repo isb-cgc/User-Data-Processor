@@ -57,6 +57,8 @@ def find_key_column(data_df, column_map, logger, key):
 
     count = 0
     for i, j in data_df.iteritems():
+        if logger:
+            logger.log_text('uduprocessor: trace {0} {1}'.format(i, column_map[i]), severity='INFO')
         if (i in column_map.keys()) and (column_map[i] == key):
             return count
         count += 1
