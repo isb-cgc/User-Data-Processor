@@ -57,8 +57,6 @@ def find_key_column(data_df, column_map, logger, key):
 
     count = 0
     for i, j in data_df.iteritems():
-        if logger:
-            logger.log_text('uduprocessor: trace {0} {1}'.format(i, column_map[i]), severity='INFO')
         if (i in column_map.keys()) and (column_map[i] == key):
             return count
         count += 1
@@ -99,27 +97,3 @@ def reject_row_duplicate_or_blank(data_df, logger, name, id_col):
             user_message = "Duplicated {0} detected in rows, processing cannot continue: {1}".format(name, str(feat))
             raise UduException(user_message)
         feature_counts[feat] = cur_count + 1
-
-#
-# Reject duplicate barcodes:
-#
-
-def reject_col_duplicate_or_blank(data_df, logger, name):
-
-    barcode_counts = {}
-
-    for i, j in data_df.iteritems():
-
-        if not i.strip():
-            if logger:
-                logger.log_text('uduprocessor: empty {0}'.format(name), severity='INFO')
-            user_message = "Empty {0} detected in columns, processing cannot continue".format(name);
-            raise UduException(user_message)
-
-        cur_count = barcode_counts.get(i, 0)
-        if cur_count > 0:
-            if logger:
-                logger.log_text('uduprocessor: duplicated {0}'.format(name), severity='INFO')
-            user_message = "Duplicated {0} detected in columns, processing cannot continue: {1}".format(name, str(i));
-            raise UduException(user_message)
-        barcode_counts[i] = cur_count + 1
