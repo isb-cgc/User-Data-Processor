@@ -24,6 +24,8 @@ from isb_cgc_user_data.bigquery_etl.extract.gcloud_wrapper import GcsConnector
 from isb_cgc_user_data.bigquery_etl.extract.utils import convert_file_to_dataframe
 from isb_cgc_user_data.bigquery_etl.load import load_data_from_file
 from isb_cgc_user_data.bigquery_etl.transform.tools import cleanup_dataframe
+from isb_cgc_user_data.utils.check_dataframe_dups import reject_row_duplicate_features
+from isb_cgc_user_data.utils.check_dataframe_dups import reject_col_duplicate_barcodes
 
 from metadata_updates import update_metadata_data_list, insert_metadata_samples, insert_feature_defs_list
 
@@ -63,6 +65,16 @@ def process_user_gen_files(project_id, user_project_id, study_id, bucket_name, b
         if idx == 0:
             data_df = convert_file_to_dataframe(filebuffer, skiprows=0, header=0)
             data_df = cleanup_dataframe(data_df, logger=logger)
+
+            # Reject duplicate features, barcodes
+
+            reject_row_duplicate_features(data_df, logger, 'barcode')
+
+            # Reject duplicate barcodes:
+
+            reject_col_duplicate_barcodes(data_df, logger, 'feature')
+
+
             data_df.rename(columns=column_mapping, inplace=True)
 
             if metadata['case_barcode'] == '':

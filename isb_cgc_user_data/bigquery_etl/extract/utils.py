@@ -17,6 +17,7 @@
 
 import json
 import pandas as pd
+import re
 from isb_cgc_user_data.utils.error_handling import UduException
 
 def convert_file_to_dataframe(filepath_or_buffer, sep="\t", skiprows=0, rollover=False, nrows=None, header=None, logger=None):
@@ -40,9 +41,18 @@ def convert_file_to_dataframe(filepath_or_buffer, sep="\t", skiprows=0, rollover
     except Exception as exp:
         if logger:
             logger.log_text("Read Table Error: {0}".format(str(exp.message)), severity='ERROR')
-        raise UduException(exp.message)
 
-    filepath_or_buffer.close() # close  StringIO
+        pattern = re.compile('^.*(CParserError.*)$')
+        match = pattern.match(str(exp.message))
+        err_guts = match.group(1)
+        if err_guts:
+            user_message = "Error parsing file: {0}. ".format(err_guts[:400])
+        else:
+            user_message = "Parsing error reading file."
+        raise UduException(user_message)
+
+    finally:
+        filepath_or_buffer.close() # close  StringIO
 
     return data_df
 

@@ -28,6 +28,9 @@ from isb_cgc_user_data.bigquery_etl.transform.tools import cleanup_dataframe
 from bigquery_table_schemas import get_molecular_schema
 from metadata_updates import update_metadata_data_list, update_molecular_metadata_samples_list, insert_feature_defs_list, update_metadata_cases
 from isb_cgc_user_data.utils.error_handling import UduException
+from isb_cgc_user_data.utils.check_dataframe_dups import reject_row_duplicate_features
+from isb_cgc_user_data.utils.check_dataframe_dups import reject_col_duplicate_barcodes
+
 
 def parse_file(project_id, bq_dataset, bucket_name, file_data, filename,
                outfilename, metadata, cloudsql_tables, config, logger=None):
@@ -64,8 +67,17 @@ def parse_file(project_id, bq_dataset, bucket_name, file_data, filename,
     # Get basic column information depending on datatype
     column_map = get_column_mapping(metadata['data_type'])
 
+    # Reject duplicate features:
+
+    reject_row_duplicate_features(data_df, logger, 'feature')
+
+    # Reject duplicate barcodes:
+
+    reject_col_duplicate_barcodes(data_df, logger, 'barcode')
+
     # Column headers are sample ids. Glue on new columns with metadata here as well.
     for i, j in data_df.iteritems():
+
         if i in column_map.keys():
             map_values[column_map[i]] = [k for d, k in j.iteritems()]
 
@@ -94,9 +106,6 @@ def parse_file(project_id, bq_dataset, bucket_name, file_data, filename,
     for barcode in sample_barcodes:
         new_metadata = metadata.copy()
         new_metadata['sample_barcode'] = barcode
-        # FIXME JUST FOR TESTING
-        if logger and ('JN_1' in barcode):
-            logger.log_text('uduprocessor: seeing the dup barcode {0}'.format(barcode), severity='INFO')
         sample_metadata_list.append(new_metadata)
     update_metadata_data_list(config, cloudsql_tables['METADATA_DATA'], sample_metadata_list)
     if logger:
