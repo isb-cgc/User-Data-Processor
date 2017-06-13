@@ -24,7 +24,7 @@ from isb_cgc_user_data.bigquery_etl.extract.gcloud_wrapper import GcsConnector
 from isb_cgc_user_data.bigquery_etl.extract.utils import convert_file_to_dataframe
 from isb_cgc_user_data.bigquery_etl.load import load_data_from_file
 from isb_cgc_user_data.bigquery_etl.transform.tools import cleanup_dataframe
-from isb_cgc_user_data.utils.check_dataframe_dups import reject_row_duplicate_or_blank, reject_col_duplicate_or_blank, find_key_column
+from isb_cgc_user_data.utils.check_dataframe_dups import reject_row_duplicate_or_blank, find_key_column, reject_dup_col_pre_dataframe
 
 from metadata_updates import update_metadata_data_list, insert_metadata_samples, insert_feature_defs_list
 
@@ -66,12 +66,16 @@ def process_user_gen_files(project_id, user_project_id, study_id, bucket_name, b
             # Reject duplicate and blank features and barcodes. Do before cleanup, because blanks
             # will be converted to NANs:
 
-            id_col = find_key_column(data_df, column_mapping, logger, 'sample_barcode')
-            reject_row_duplicate_or_blank(data_df, logger, 'barcode', id_col)
-            reject_col_duplicate_or_blank(data_df, logger, 'feature')
-
+            reject_dup_col_pre_dataframe(filebuffer, logger, 'barcode')
 
             data_df = convert_file_to_dataframe(filebuffer, skiprows=0, header=0)
+
+            # Reject duplicate and blank features. Do before cleanup, because blanks
+            # will be converted to NANs:
+
+            id_col = find_key_column(data_df, column_mapping, logger, 'sample_barcode')
+            reject_row_duplicate_or_blank(data_df, logger, 'barcode', id_col)
+
             data_df = cleanup_dataframe(data_df, logger=logger)
 
             data_df.rename(columns=column_mapping, inplace=True)
