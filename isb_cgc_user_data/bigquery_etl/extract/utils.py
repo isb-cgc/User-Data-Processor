@@ -14,11 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Extract Utils
-"""
 
 import json
 import pandas as pd
+import re
+from isb_cgc_user_data.utils.error_handling import UduException
 
 def convert_file_to_dataframe(filepath_or_buffer, sep="\t", skiprows=0, rollover=False, nrows=None, header=None, logger=None):
     """does some required data cleaning and
@@ -33,15 +33,31 @@ def convert_file_to_dataframe(filepath_or_buffer, sep="\t", skiprows=0, rollover
         na_values = ['none', 'None', 'NONE', 'null', 'Null', 'NULL', ' ', 'NA', '__UNKNOWN__', '?']
 
         # read the table/file
+        # EXCEPTION THROWN: TOO MANY FIELDS THROWS CParserError e.g. "Expected 207 fields in line 3, saw 208"
+        # EXCEPTION THROWN: EMPTY FILE THROWS CParserError e.g. "Passed header=0 but only 0 lines in file"
         data_df = pd.read_table(filepath_or_buffer, sep=sep, skiprows=skiprows, lineterminator='\n',
                                 comment='#', na_values=na_values, dtype='object', nrows=nrows, header=header)
 
     except Exception as exp:
         if logger:
             logger.log_text("Read Table Error: {0}".format(str(exp.message)), severity='ERROR')
-        raise
 
-    filepath_or_buffer.close() # close  StringIO
+        user_message = None
+        pattern = re.compile('^.* error: (.*)$')
+        match = pattern.match(str(exp.message))
+        if match:
+            err_guts = match.group(1)
+            if err_guts:
+                user_message = "Error parsing file: {0}. ".format(err_guts[:400])
+        if not user_message:
+            if "0 lines in file" in str(exp.message):
+                user_message = "File was empty"
+        if not user_message:
+            user_message = "Parsing error reading file"
+        raise UduException(user_message)
+
+    finally:
+        filepath_or_buffer.close() # close  StringIO
 
     return data_df
 

@@ -18,6 +18,7 @@ import json
 import requests
 import traceback
 import os
+import urllib
 
 import user_gen.user_gen_processing
 import user_gen.molecular_processing
@@ -26,6 +27,7 @@ import user_gen.vcf_processing
 from not_psq.safe_logger import Safe_Logger
 from isb_cgc_user_data.utils.build_config import read_dict
 from isb_cgc_user_data.utils.processed_file import processed_name
+from isb_cgc_user_data.utils.error_handling import UduException
 
 #
 # Here we read the config and secret file
@@ -110,6 +112,17 @@ def process_upload(user_data_config, success_url, failure_url):
             else:
                 mol_file_list.append(file)
 
+
+        # Current UI options (5/31/17). Note VCF is NOT an option.
+        # High-level files:
+        #   DNA Methylation
+        #   Gene Expression
+        #   microRNA
+        #   Protein Expression
+        #   Other
+        # Low-level files
+
+
         # TODO: Add processor for low level file listings
 
         logger.log_text('uduprocessor: Number of user_gen files: {0}'.format(len(user_gen_list)), severity='INFO')
@@ -131,7 +144,7 @@ def process_upload(user_data_config, success_url, failure_url):
                                                                 logger)
             logger.log_text('uduprocessor: Processed user_gen', severity='INFO')
 
-        # Process all VCF Files
+        # Process all VCF Files. NOTE: process_vcf_files is currently an unimplemented stub!
         if len(vcf_file_list):
             logger.log_text('uduprocessor: Processing vcf', severity='INFO')
             user_gen.vcf_processing.process_vcf_files(project_id,
@@ -224,20 +237,30 @@ def process_upload(user_data_config, success_url, failure_url):
                                                         )
                 logger.log_text('uduprocessor: Processed low-level {0}'.format(blob_name), severity='INFO')
             logger.log_text('uduprocessor: Processed low-level', severity='INFO')
-        logger.log_text('uduprocessor registering success to {0}'.format(success_url), severity='INFO')
-        r = requests.get(success_url)
-        if r.status_code < 400:
-            logger.log_text('uduprocessor registered success with return code {0}'.format(str(r.status_code)), severity='INFO')
-        else:
-            logger.log_text('uduprocessor callback failed with return code {0}'.format(str(r.status_code)), severity='WARNING')
-    except:
-        logger.log_text('uduprocessor registering failure to {0}'.format(failure_url), severity='ERROR')
+        callback_url = success_url;
+        job_status = 'success'
+        log_severity = 'INFO'
+
+    except UduException as uexp:
+        job_status = 'failure'
+        log_severity = 'ERROR'
         logger.log_text(traceback.format_exc(), severity='ERROR');
-        r = requests.get(failure_url)
-        if r.status_code < 400:
-            logger.log_text('uduprocessor registered failure with return code {0}'.format(str(r.status_code)), severity='INFO')
-        else:
-            logger.log_text('uduprocessor failure callback failed with return code {0}'.format(str(r.status_code)), severity='WARNING')
+        callback_url = '{0}&errmsg={1}'.format(failure_url, urllib.quote(uexp.message))
+
+    except Exception as ex:
+        job_status = 'failure'
+        log_severity = 'ERROR'
+        logger.log_text(traceback.format_exc(), severity='ERROR');
+        ready_msg = urllib.quote('Unexpected error loading data')
+        callback_url = '{0}&errmsg={1}'.format(failure_url, ready_msg);
+
+    # Let the WebApp know what happened to the job.
+    logger.log_text('uduprocessor registering {0} to {1}'.format(job_status, callback_url), severity=log_severity)
+    r = requests.get(callback_url)
+    if r.status_code < 400:
+        logger.log_text('uduprocessor registered {0} with return code {1}'.format(job_status, str(r.status_code)), severity='INFO')
+    else:
+        logger.log_text('uduprocessor callback failed with return code {0}'.format(str(r.status_code)), severity='WARNING')
 
 
 if __name__ == '__main__':

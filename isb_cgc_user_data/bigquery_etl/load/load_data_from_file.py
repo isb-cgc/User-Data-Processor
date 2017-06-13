@@ -33,9 +33,11 @@ import json
 import time
 import uuid
 import os
+import re
 from googleapiclient import discovery
 from oauth2client.client import GoogleCredentials
 from isb_cgc_user_data.utils import build_config
+from isb_cgc_user_data.utils.error_handling import UduException
 
 
 # [START load_table]
@@ -89,36 +91,49 @@ def load_table(bigquery, project_id, dataset_id, table_name, source_schema,
 
 
 # [START poll_job]
-def poll_job(bigquery, job):
+def poll_job(bigquery, job, logger=None):
     """Waits for a job to complete."""
 
     print('Waiting for job to finish...')
 
-    request = bigquery.jobs().get(
-        projectId=job['jobReference']['projectId'],
-        jobId=job['jobReference']['jobId'])
+    try:
+        request = bigquery.jobs().get(
+            projectId=job['jobReference']['projectId'],
+            jobId=job['jobReference']['jobId'])
 
-    while True:
-        result = request.execute(num_retries=2)
+        while True:
+            result = request.execute(num_retries=2)
+            # This will raise exceptions if we have parsing errors (e.g. cannot convert to a float)
+            if 'errors' in result['status']:
+                udu_ex = UduException(json.dumps(result['status']['errors'])[:400])
+                if logger:
+                    logger.log_text("Error loading BQtable: {0}".format(str(udu_ex.message)), severity='ERROR')
+                raise udu_ex
 
-        if 'errors' in result['status']:
-            print ('Error loading table:')
-            raise RuntimeError(json.dumps(result['status']['errors'], indent=4))
-            return
+            if result['status']['state'] == 'DONE':
+                if 'errorResult' in result['status']:
+                    udu_ex = UduException(str(result['status']['errorResult'])[:400])
+                    if logger:
+                        logger.log_text("Error loading BQtable upon completion: {0}".format(str(udu_ex.message)), severity='ERROR')
+                    raise udu_ex
+                if logger:
+                    logger.log_text("BQtable job complete", severity='INFO')
+                return
 
-        if result['status']['state'] == 'DONE':
-            if 'errorResult' in result['status']:
-                raise RuntimeError(result['status']['errorResult'])
-            print('Job complete.')
-            return
+            time.sleep(1)
 
-        time.sleep(1)
+    except UduException as udu:
+        raise udu
+
+    except Exception as exp:
+        handle_bq_exception(exp, logger)
 # [END poll_job]
 
 
 # [START run]
 def run(config, project_id, dataset_id, table_name, schema_file, data_path,
-         source_format='NEWLINE_DELIMITED_JSON', write_disposition='WRITE_EMPTY', num_retries=5, poll_interval=1, is_schema_file=True):
+         source_format='NEWLINE_DELIMITED_JSON', write_disposition='WRITE_EMPTY',
+         num_retries=5, poll_interval=1, is_schema_file=True, logger=None):
     # [START build_service]
     # Grab the application's default credentials from the environment.
 
@@ -138,21 +153,42 @@ def run(config, project_id, dataset_id, table_name, schema_file, data_path,
     else:
         schema = schema_file
 
-    job = load_table(
-        bigquery,
-        project_id,
-        dataset_id,
-        table_name,
-        schema,
-        data_path,
-        source_format,
-        num_retries,
-        write_disposition
-    )
+    try:
+        job = load_table(
+            bigquery,
+            project_id,
+            dataset_id,
+            table_name,
+            schema,
+            data_path,
+            source_format,
+            num_retries,
+            write_disposition
+        )
+    except Exception as exp:
+        handle_bq_exception(exp, logger)
 
-    poll_job(bigquery, job)
+    poll_job(bigquery, job, logger)
     
 # [END run]
+
+
+def handle_bq_exception(exp, logger):
+    if logger:
+        logger.log_text("BQ Loading Error: {0}".format(str(exp.message)), severity='ERROR')
+
+    if "Could not convert value to double" in str(exp.message):
+        pattern = re.compile('^.*Value: ([^"]*).*$')
+        match = pattern.match(str(exp.message))
+        if match:
+            value = match.group(1)
+            user_message = "Error loading file into BigQuery. Non-numeric value found: {0}. ".format(
+                str(value)[:400])
+        else:
+            user_message = "Error loading file into BigQuery. Non-numeric value found"
+    else:
+        user_message = "Error loading file into BigQuery: Make sure BigQuery target dataset exists."
+    raise UduException(user_message)
 
 
 # [START main]

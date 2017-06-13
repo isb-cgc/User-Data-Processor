@@ -113,7 +113,7 @@ mv ${UDU_HOME}/udu_secrets.txt ${UDU_HOME}/User-Data-Processor/config/udu_secret
 chmod 400 ${UDU_HOME}/User-Data-Processor/config/udu_secrets.txt
 mv ${UDU_HOME}/pubSubServiceAcct${UCSTAGE}.json ${UDU_HOME}/User-Data-Processor/credentials/pubSubServiceAcct.json
 mv ${UDU_HOME}/sqlServiceAcct${UCSTAGE}.json ${UDU_HOME}/User-Data-Processor/credentials/sqlServiceAcct.json
-mv ${UDU_HOME}/bucketAndBiqQueryServiceAcct${UCSTAGE}.json ${UDU_HOME}/User-Data-Processor/credentials/bucketAndBiqQueryServiceAcct.json
+mv ${UDU_HOME}/bucketAndBigQueryServiceAcct${UCSTAGE}.json ${UDU_HOME}/User-Data-Processor/credentials/bucketAndBigQueryServiceAcct.json
 chmod 400 ${UDU_HOME}/User-Data-Processor/credentials/*.json
 
 cd ${UDU_HOME}/User-Data-Processor/udu_server

@@ -20,10 +20,12 @@ import pandas as pd
 import numpy as np
 from StringIO import StringIO
 import chardet
+from isb_cgc_user_data.utils.error_handling import UduException
 
 
 #--------------------------------------
 # Clean up the dataframe
+# Throws a UduException if the dataframe is empty (only has the header row)
 #--------------------------------------
 def cleanup_dataframe(df, logger=None):
     """Cleans the dataframe
@@ -35,7 +37,8 @@ def cleanup_dataframe(df, logger=None):
         logger.log_text("Cleaning up the dataframe", severity='INFO')
 
     if df.empty:
-        raise Exception("Empty dataframe passed to clean_up_dataframe fuction")
+        logger.log_text("Encountered empty dataframe", severity='ERROR')
+        raise UduException("Uploaded file only contained header row")
 
     # why again, we are doing it in convert_to_dataframe, right?
     # because we can call this function separately
