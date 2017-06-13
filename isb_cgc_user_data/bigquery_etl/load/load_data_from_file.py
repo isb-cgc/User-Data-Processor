@@ -105,14 +105,14 @@ def poll_job(bigquery, job, logger=None):
             result = request.execute(num_retries=2)
             # This will raise exceptions if we have parsing errors (e.g. cannot convert to a float)
             if 'errors' in result['status']:
-                udu_ex = UduException(json.dumps(result['status']['errors']))
+                udu_ex = UduException(json.dumps(result['status']['errors'])[:400])
                 if logger:
                     logger.log_text("Error loading BQtable: {0}".format(str(udu_ex.message)), severity='ERROR')
                 raise udu_ex
 
             if result['status']['state'] == 'DONE':
                 if 'errorResult' in result['status']:
-                    udu_ex = UduException(str(result['status']['errorResult']))
+                    udu_ex = UduException(str(result['status']['errorResult'])[:400])
                     if logger:
                         logger.log_text("Error loading BQtable upon completion: {0}".format(str(udu_ex.message)), severity='ERROR')
                     raise udu_ex
@@ -121,6 +121,9 @@ def poll_job(bigquery, job, logger=None):
                 return
 
             time.sleep(1)
+
+    except UduException as udu:
+        raise udu
 
     except Exception as exp:
         handle_bq_exception(exp, logger)
@@ -172,7 +175,7 @@ def run(config, project_id, dataset_id, table_name, schema_file, data_path,
 
 def handle_bq_exception(exp, logger):
     if logger:
-        logger.log_text("BQ Polling Error: {0}".format(str(exp.message)), severity='ERROR')
+        logger.log_text("BQ Loading Error: {0}".format(str(exp.message)), severity='ERROR')
 
     if "Could not convert value to double" in str(exp.message):
         pattern = re.compile('^.*Value: ([^"]*).*$')
