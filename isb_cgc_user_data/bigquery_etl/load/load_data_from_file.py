@@ -187,7 +187,7 @@ def handle_bq_exception(exp, logger):
         else:
             user_message = "Error loading file into BigQuery. Non-numeric value found"
     else:
-        user_message = "Parsing error loading file into BigQuery."
+        user_message = "Error loading file into BigQuery: Make sure BigQuery target dataset exists."
     raise UduException(user_message)
 
 
