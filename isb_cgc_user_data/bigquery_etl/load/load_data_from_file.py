@@ -175,15 +175,14 @@ def handle_bq_exception(exp, logger):
         logger.log_text("BQ Polling Error: {0}".format(str(exp.message)), severity='ERROR')
 
     if "Could not convert value to double" in str(exp.message):
-        value = ""
-        pattern = re.compile('Value: ([^"]*)')
+        pattern = re.compile('^.*Value: ([^"]*).*$')
         match = pattern.match(str(exp.message))
         if match:
             value = match.group(1)
             user_message = "Error loading file into BigQuery. Non-numeric value found: {0}. ".format(
                 str(value)[:400])
         else:
-            user_message = "Error loading file into BigQuery. Non-numeric value found:"
+            user_message = "Error loading file into BigQuery. Non-numeric value found"
     else:
         user_message = "Parsing error loading file into BigQuery."
     raise UduException(user_message)
