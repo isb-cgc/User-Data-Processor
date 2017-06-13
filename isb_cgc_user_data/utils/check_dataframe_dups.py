@@ -26,9 +26,9 @@ def find_key_column(data_df, column_map, logger, key):
         count += 1
     if logger:
         logger.log_text('uduprocessor: no key column found', severity='INFO')
-    for key, value in column_map.iteritems():
+    for tkey, value in column_map.iteritems():
         if value == key:
-            needed = key;
+            needed = tkey;
             break
     user_message = 'No key column named {0} found, processing cannot continue'.format(needed);
     raise UduException(user_message)
