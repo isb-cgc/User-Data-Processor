@@ -79,6 +79,11 @@ def reject_row_duplicate_or_blank(data_df, logger, name, id_col):
 
     for row_index, row in data_df.iterrows():
         feat = row[id_col]
+        if isinstance(feat, float):
+            if logger:
+                logger.log_text('uduprocessor: float key implies trailing empty line {0}'.format(name), severity='INFO')
+            user_message = "Trailing empty lines detected, processing cannot continue"
+            raise UduException(user_message)
         if not feat.strip():
             if logger:
                 logger.log_text('uduprocessor: empty {0}'.format(name), severity='INFO')
