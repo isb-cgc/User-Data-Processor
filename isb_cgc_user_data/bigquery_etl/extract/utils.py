@@ -50,9 +50,7 @@ def convert_file_to_dataframe(filepath_or_buffer, sep="\t", skiprows=0, rollover
             if err_guts:
                 user_message = "Error parsing file: {0}. ".format(err_guts[:400])
         if not user_message:
-            pattern = re.compile("0 lines in file")
-            match = pattern.match(str(exp.message))
-            if match:
+            if "0 lines in file" in str(exp.message):
                 user_message = "File was empty"
         if not user_message:
             user_message = "Parsing error reading file"
